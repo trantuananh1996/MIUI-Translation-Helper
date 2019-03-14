@@ -2,9 +2,6 @@ package com.anhtt.miui.translation.helper.model.res;
 
 import com.sun.istack.internal.Nullable;
 import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,26 +20,26 @@ public class ArrayRes implements Resource<ArrayRes> {
 
     @Nullable
     public static ArrayRes create(Element element) {
-        String name = "";
-
-        NamedNodeMap curAttr = element.getAttributes();
-        for (int j = 0; j < curAttr.getLength(); j++) {
-            Node attr = curAttr.item(j);
-            if (attr.getNodeName().equals("name"))
-                name = attr.getNodeValue();
-        }
-
-        List<Item> items = new ArrayList<>();
-        NodeList list = element.getChildNodes();
-        for (int i = 0; i < list.getLength(); i++) {
-            Element child = (Element) list.item(i);
-            items.add(new Item(child.getTextContent()));
-        }
-        if (name != null && name.length() > 0) {
-            ArrayRes arrayRes = new ArrayRes(name);
-            arrayRes.setItems(items);
-            return arrayRes;
-        }
+//        String name = "";
+//
+//        NamedNodeMap curAttr = element.getAttributes();
+//        for (int j = 0; j < curAttr.getLength(); j++) {
+//            Node attr = curAttr.item(j);
+//            if (attr.getNodeName().equals("name"))
+//                name = attr.getNodeValue();
+//        }
+//
+//        List<Item> items = new ArrayList<>();
+//        NodeList list = element.getChildNodes();
+//        for (int i = 0; i < list.getLength(); i++) {
+//            Element child = (Element) list.item(i);
+//            items.add(new Item(child.getTextContent()));
+//        }
+//        if (name != null && name.length() > 0) {
+//            ArrayRes arrayRes = new ArrayRes(name);
+//            arrayRes.setItems(items);
+//            return arrayRes;
+//        }
 
         return null;
     }

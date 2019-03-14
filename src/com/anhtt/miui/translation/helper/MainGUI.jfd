@@ -172,6 +172,15 @@ new FormModel {
 					"gridX": 15
 					"gridY": 23
 				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnMoveToIgnored"
+					"text": "Chuyển string chưa dịch vào ignore"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnMoveToIgnoredMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 11
+					"gridY": 25
+					"gridWidth": 9
+				} )
 				add( new FormComponent( "javax.swing.JLabel" ) {
 					name: "tvLog"
 					"text": "Log"

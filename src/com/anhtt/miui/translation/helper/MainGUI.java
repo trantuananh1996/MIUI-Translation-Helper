@@ -18,6 +18,7 @@ import javax.swing.border.CompoundBorder;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -377,6 +378,17 @@ public class MainGUI extends JFrame {
         edtResCheckFolder.setText(fileChooser.getSelectedFile().getAbsolutePath());
     }
 
+    private void btnMoveToIgnoredMouseClicked(MouseEvent e) {
+        if (untranslatedApplications != null && untranslatedApplications.size() > 0) {
+            try {
+                Utils.addIgnoredFile(edtResCheckFolder.getText(), untranslatedApplications);
+            } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
+                e1.printStackTrace();
+            }
+        } else JOptionPane.showMessageDialog(null, "Chưa lọc/không có file chưa dịch");
+
+    }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
@@ -403,6 +415,7 @@ public class MainGUI extends JFrame {
         cbFindCanRemove = new JCheckBox();
         checkBox1 = new JCheckBox();
         btnStart = new JButton();
+        btnMoveToIgnored = new JButton();
         tvLog = new JLabel();
 
         //======== this ========
@@ -540,6 +553,16 @@ public class MainGUI extends JFrame {
             });
             panel1.add(btnStart, CC.xy(15, 23));
 
+            //---- btnMoveToIgnored ----
+            btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
+            btnMoveToIgnored.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnMoveToIgnoredMouseClicked(e);
+                }
+            });
+            panel1.add(btnMoveToIgnored, CC.xywh(11, 25, 9, 1));
+
             //---- tvLog ----
             tvLog.setText("Log");
             panel1.add(tvLog, CC.xywh(1, 27, 13, 1));
@@ -581,6 +604,7 @@ public class MainGUI extends JFrame {
     private JCheckBox cbFindCanRemove;
     private JCheckBox checkBox1;
     private JButton btnStart;
+    private JButton btnMoveToIgnored;
     private JLabel tvLog;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }

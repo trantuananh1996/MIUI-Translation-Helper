@@ -1,10 +1,11 @@
 package com.anhtt.miui.translation.helper;
 
-import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.anhtt.miui.translation.helper.model.WrongApplication;
 import com.anhtt.miui.translation.helper.model.WrongStringRes;
+import com.anhtt.miui.translation.helper.model.res.StringRes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -14,7 +15,10 @@ import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
@@ -61,11 +65,13 @@ public class Utils {
             writeWrongToFile(absolutePath, wrongApplication);
         }
     }
+
     public static void writeUnTranslatedStringToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
             writeUnTranslatedStringToFile(absolutePath, wrongApplication);
         }
     }
+
     public static void writeUnTranslatedStringToFile(String path, WrongApplication wrongApplication) {
         if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
         try {
@@ -81,10 +87,10 @@ public class Utils {
             document.appendChild(root);
 
             for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
-                    Element stringNode = document.createElement("string");
-                    root.appendChild(stringNode);
-                    stringNode.setAttribute("name", string.getName());
-                    stringNode.setTextContent(string.getValue());
+                Element stringNode = document.createElement("string");
+                root.appendChild(stringNode);
+                stringNode.setAttribute("name", string.getName());
+                stringNode.setTextContent(string.getValue());
             }
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -106,6 +112,7 @@ public class Utils {
             pce.printStackTrace();
         }
     }
+
     public static void writeWrongToFile(String path, WrongApplication wrongApplication) {
         if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
         try {
@@ -164,12 +171,12 @@ public class Utils {
     }
 
 
-
     public static void writeUnTranslatedArrayToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
             writeUnTranslatedArrayToFile(absolutePath, wrongApplication);
         }
     }
+
     public static void writeUnTranslatedArrayToFile(String path, WrongApplication wrongApplication) {
         if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
         try {
@@ -209,5 +216,48 @@ public class Utils {
         } catch (ParserConfigurationException | TransformerException | IOException pce) {
             pce.printStackTrace();
         }
+    }
+
+    public static void addIgnoredFile(String path, List<WrongApplication> untranslatedApplications) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        File sourceFile = new File(path + "\\MIUI10\\MIUI10_untranslateable.xml");
+        if (!sourceFile.exists()) return;
+
+
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder docBuilder = factory.newDocumentBuilder();
+        Document doc = docBuilder.parse(sourceFile);
+        Element root = doc.getDocumentElement();
+
+        for (WrongApplication wrongApplication : untranslatedApplications) {
+
+
+            for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
+                Element item = doc.createElement("item");
+                root.appendChild(item);
+                item.setAttribute("folder", "all");
+                item.setAttribute("application", wrongApplication.getName());
+                item.setAttribute("file", "strings.xml");
+                item.setAttribute("name", string.getName());
+            }
+        }
+
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource domSource = new DOMSource(doc);
+        StringWriter outputXmlStringWriter = new StringWriter();
+        transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+        String outputXmlString = outputXmlStringWriter.toString()
+                .replaceAll("<item", "\n\t<item")
+                .replaceAll("<device", "\n\t\t<device")
+                .replaceAll("<allDevice", "\n<allDevice")
+                .replaceAll("</allDevice", "\n</allDevice")
+                .replaceAll("<resources", "\n<resources")
+                .replaceAll("</resources", "\n</resources");
+
+        FileOutputStream outputXml = new FileOutputStream(sourceFile.getAbsolutePath());
+        outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+        outputXml.close();
+
     }
 }

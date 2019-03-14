@@ -132,6 +132,7 @@ public class Application {
         if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi-rVN");
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
+        if(!file.exists()) return;
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("array");
         for (int i = 0; i < list.getLength(); i++) {
