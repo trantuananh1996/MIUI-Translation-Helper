@@ -21,10 +21,10 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * @author unknown
@@ -34,7 +34,6 @@ public class MainGUI extends JFrame {
     List<OriginDevice> originDevices;
     List<OriginDevice> specificOriginDevices;
     public static JLabel tvLogStatic;
-    public static String filteredPath;
     public static List<UnTranslateable> unTranslateables;
     public static List<UnTranslateable> autoIgnoredList;
     public static List<WrongStringRes> wrongTranslateGlobals = new ArrayList<>();
@@ -49,7 +48,11 @@ public class MainGUI extends JFrame {
         setSize(500, 340);
         setLocationRelativeTo(getOwner());
         tvLogStatic = tvLog;
-
+        //TODO: For fast testing
+        edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv10-XML-Compare");
+        edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-10-XML-Vietnamese\\Vietnamese");
+        edtFilteredFolder.setText("C:\\Users\\trant\\Documents\\Filtered");
+        edtResCheckFolder.setText("C:\\Users\\trant\\Documents\\Github\\MA-XML-CHECK-RESOURCES");
     }
 
     public static void main(String[] args) {
@@ -67,12 +70,12 @@ public class MainGUI extends JFrame {
     }
 
     private void btnStartMouseClicked(MouseEvent e) {
-//        String originPath = edtOriginFolder.getText();
-//        String translationPath = edtTranslatedFolder.getText();
-//        filteredPath = edtFilteredFolder.getText();
-        String originPath = "C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv10-XML-Compare";
-        String translationPath = "C:\\Users\\trant\\Documents\\Github\\MIUI-10-XML-Vietnamese\\Vietnamese";
-        filteredPath = "C:\\Users\\trant\\Documents\\Filtered";
+
+
+        String originPath = edtOriginFolder.getText();
+        String translationPath = edtTranslatedFolder.getText();
+        String filteredPath = edtFilteredFolder.getText();
+
         File originFolder = new File(originPath);
         File translationFolder = new File(translationPath);
         File filteredFolder = new File(filteredPath);
@@ -87,7 +90,11 @@ public class MainGUI extends JFrame {
 
         if (!filteredFolder.exists()) filteredFolder.mkdirs();
         else {
-            filteredFolder.delete();
+//            try {
+//                deleteDirectoryStream(filteredFolder.toPath());
+//            } catch (IOException e1) {
+//                e1.printStackTrace();
+//            }
             filteredFolder.mkdirs();
         }
 
@@ -96,7 +103,12 @@ public class MainGUI extends JFrame {
         StringWorker worker = new StringWorker(originFolder, translationFolder, filteredFolder);
         worker.execute();
     }
-
+    void deleteDirectoryStream(Path path) throws IOException {
+        Files.walk(path)
+                .sorted(Comparator.reverseOrder())
+                .map(Path::toFile)
+                .forEach(File::delete);
+    }
 
     public final class StringWorker extends SwingWorker<String, String> {
         File originFolder;
@@ -147,17 +159,16 @@ public class MainGUI extends JFrame {
 
 
             originDevices.forEach(originDevice -> {
-                File filtered = new File(filteredPath);
                 originDevice.getApps().forEach(application -> {
                     if (cbFindFormatedString.isSelected()) {
-                        group(application.getName(), application.getWrongTranslatedOrigins(),  originDevice, wrongApplications);
+                        group(application.getName(), application.getWrongTranslatedOrigins(), originDevice, wrongApplications);
                     }
 
                     if (cbFindUntranslated.isSelected()) {
                         group(application.getName(), application.getUnTranslatedStrings(), originDevice, untranslatedApplications);
                     }
                     if (cbFindCanRemove.isSelected())
-                        Utils.writeStringsToFile(filtered.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslated());
+                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslated());
 
                 });
             });
@@ -199,7 +210,8 @@ public class MainGUI extends JFrame {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
 
-        File sourceFile = new File("C:\\Users\\trant\\Documents\\Github\\MA-XML-CHECK-RESOURCES\\MIUI10\\MIUI10_auto_ignorelist.xml");
+        File sourceFile = new File(edtResCheckFolder.getText() + "\\MIUI10\\MIUI10_auto_ignorelist.xml");
+        if (!sourceFile.exists()) return new ArrayList<>();
         Document doc = docBuilder.parse(sourceFile);
         NodeList list = doc.getElementsByTagName("item");
         for (int i = 0; i < list.getLength(); i++) {
@@ -243,7 +255,8 @@ public class MainGUI extends JFrame {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
 
-        File sourceFile = new File("C:\\Users\\trant\\Documents\\Github\\MA-XML-CHECK-RESOURCES\\MIUI10\\MIUI10_untranslateable.xml");
+        File sourceFile = new File(edtResCheckFolder.getText() + "\\MIUI10\\MIUI10_untranslateable.xml");
+        if (!sourceFile.exists()) return new ArrayList<>();
         Document doc = docBuilder.parse(sourceFile);
         NodeList list = doc.getElementsByTagName("item");
         for (int i = 0; i < list.getLength(); i++) {
@@ -320,6 +333,11 @@ public class MainGUI extends JFrame {
         edtFilteredFolder.setText(fileChooser.getSelectedFile().getAbsolutePath());
     }
 
+    private void btnPickResCheckFolderMouseClicked(MouseEvent e) {
+        JFileChooser fileChooser = createFileChooser(this);
+        edtResCheckFolder.setText(fileChooser.getSelectedFile().getAbsolutePath());
+    }
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
@@ -333,6 +351,9 @@ public class MainGUI extends JFrame {
         label6 = new JLabel();
         edtFilteredFolder = new JTextField();
         btnPickFiltered = new JButton();
+        label1 = new JLabel();
+        edtResCheckFolder = new JTextField();
+        btnPickResCheckFolder = new JButton();
         label4 = new JLabel();
         label5 = new JLabel();
         cbString = new JCheckBox();
@@ -359,13 +380,13 @@ public class MainGUI extends JFrame {
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                "7*(default, $lcgap), default",
-                "12*(default, $lgap), default"));
+                "7*(default, $lcgap), 71dlu, $lcgap, default, $lcgap, 22dlu",
+                "13*(default, $lgap), default"));
 
             //---- label2 ----
             label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
             panel1.add(label2, CC.xy(1, 3));
-            panel1.add(edtOriginFolder, CC.xywh(3, 3, 9, 1));
+            panel1.add(edtOriginFolder, CC.xywh(3, 3, 15, 1));
 
             //---- btnPickOrigin ----
             btnPickOrigin.setText("...");
@@ -375,12 +396,12 @@ public class MainGUI extends JFrame {
                     btnPickOriginMouseClicked(e);
                 }
             });
-            panel1.add(btnPickOrigin, CC.xy(13, 3));
+            panel1.add(btnPickOrigin, CC.xy(19, 3));
 
             //---- label3 ----
             label3.setText("Th\u01b0 m\u1ee5c \u0111\u00e3 d\u1ecbch");
             panel1.add(label3, CC.xy(1, 5));
-            panel1.add(edtTranslatedFolder, CC.xywh(3, 5, 9, 1));
+            panel1.add(edtTranslatedFolder, CC.xywh(3, 5, 15, 1));
 
             //---- btnPickTranslated ----
             btnPickTranslated.setText("...");
@@ -390,12 +411,12 @@ public class MainGUI extends JFrame {
                     btnPickTranslatedMouseClicked(e);
                 }
             });
-            panel1.add(btnPickTranslated, CC.xy(13, 5));
+            panel1.add(btnPickTranslated, CC.xy(19, 5));
 
             //---- label6 ----
             label6.setText("L\u01b0u file \u0111\u00e3 l\u1ecdc");
             panel1.add(label6, CC.xy(1, 7));
-            panel1.add(edtFilteredFolder, CC.xywh(3, 7, 9, 1));
+            panel1.add(edtFilteredFolder, CC.xywh(3, 7, 15, 1));
 
             //---- btnPickFiltered ----
             btnPickFiltered.setText("...");
@@ -405,50 +426,65 @@ public class MainGUI extends JFrame {
                     btnPickFilteredMouseClicked(e);
                 }
             });
-            panel1.add(btnPickFiltered, CC.xy(13, 7));
+            panel1.add(btnPickFiltered, CC.xy(19, 7));
+
+            //---- label1 ----
+            label1.setText("Resources check");
+            panel1.add(label1, CC.xy(1, 9));
+            panel1.add(edtResCheckFolder, CC.xywh(3, 9, 15, 1));
+
+            //---- btnPickResCheckFolder ----
+            btnPickResCheckFolder.setText("...");
+            btnPickResCheckFolder.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnPickResCheckFolderMouseClicked(e);
+                }
+            });
+            panel1.add(btnPickResCheckFolder, CC.xy(19, 9));
 
             //---- label4 ----
             label4.setText("T\u00f9y ch\u1ecdn d\u1ecbch");
-            panel1.add(label4, CC.xy(1, 11));
+            panel1.add(label4, CC.xy(1, 13));
 
             //---- label5 ----
             label5.setText("T\u00f9y ch\u1ecdn");
-            panel1.add(label5, CC.xy(5, 11));
+            panel1.add(label5, CC.xy(5, 13));
 
             //---- cbString ----
             cbString.setText("string");
-            panel1.add(cbString, CC.xy(1, 13));
+            panel1.add(cbString, CC.xy(1, 15));
 
             //---- cbFindFormatedString ----
             cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
             cbFindFormatedString.setSelected(true);
             cbFindFormatedString.setToolTipText("T\u00ecm nh\u1eefng string c\u00f3 format b\u1ecb d\u1ecbch sai do ch\u01b0a update theo ng\u00f4n ng\u1eef m\u1edbi");
-            panel1.add(cbFindFormatedString, CC.xy(5, 13));
+            panel1.add(cbFindFormatedString, CC.xy(5, 15));
 
             //---- cbArray ----
             cbArray.setText("array");
-            panel1.add(cbArray, CC.xy(1, 15));
+            panel1.add(cbArray, CC.xy(1, 17));
 
             //---- cbFindUntranslated ----
             cbFindUntranslated.setText("T\u00ecm text ch\u01b0a d\u1ecbch");
             cbFindUntranslated.setToolTipText("T\u00ecm text ch\u01b0a d\u1ecbch trong to\u00e0n b\u1ed9 g\u00f3i ng\u00f4n ng\u1eef, \u1edf t\u1ea5t c\u1ea3 c\u00e1c thi\u1ebft b\u1ecb");
             cbFindUntranslated.setSelected(true);
-            panel1.add(cbFindUntranslated, CC.xy(5, 15));
+            panel1.add(cbFindUntranslated, CC.xy(5, 17));
 
             //---- cbPlural ----
             cbPlural.setText("plural");
-            panel1.add(cbPlural, CC.xy(1, 17));
+            panel1.add(cbPlural, CC.xy(1, 19));
 
             //---- cbFindCanRemove ----
             cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
             cbFindCanRemove.setSelected(true);
             cbFindCanRemove.setToolTipText("Nh\u1eefng text m\u00e0 d\u1ecbch gi\u1ed1ng h\u1ec7t g\u1ed1c c\u00f3 th\u1ec3 b\u1ecf kh\u1ecfi g\u00f3i ng\u00f4n ng\u1eef");
-            panel1.add(cbFindCanRemove, CC.xy(5, 17));
+            panel1.add(cbFindCanRemove, CC.xy(5, 19));
 
             //---- checkBox1 ----
             checkBox1.setText("So s\u00e1nh v\u1edbi string b\u1ecb b\u1ecf qua");
             checkBox1.setToolTipText("B\u1ecf qua text trong danh s\u00e1ch khi qu\u00e9t");
-            panel1.add(checkBox1, CC.xy(5, 19));
+            panel1.add(checkBox1, CC.xy(5, 21));
 
             //---- btnStart ----
             btnStart.setText("B\u1eaft \u0111\u1ea7u");
@@ -458,11 +494,11 @@ public class MainGUI extends JFrame {
                     btnStartMouseClicked(e);
                 }
             });
-            panel1.add(btnStart, CC.xy(13, 23));
+            panel1.add(btnStart, CC.xy(15, 23));
 
             //---- tvLog ----
             tvLog.setText("Log");
-            panel1.add(tvLog, CC.xywh(1, 25, 13, 1));
+            panel1.add(tvLog, CC.xywh(1, 27, 13, 1));
         }
         add(panel1, BorderLayout.CENTER);
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
@@ -488,6 +524,9 @@ public class MainGUI extends JFrame {
     private JLabel label6;
     private JTextField edtFilteredFolder;
     private JButton btnPickFiltered;
+    private JLabel label1;
+    private JTextField edtResCheckFolder;
+    private JButton btnPickResCheckFolder;
     private JLabel label4;
     private JLabel label5;
     private JCheckBox cbString;
