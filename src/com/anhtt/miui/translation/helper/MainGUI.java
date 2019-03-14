@@ -5,8 +5,10 @@
 package com.anhtt.miui.translation.helper;
 
 import com.anhtt.miui.translation.helper.model.*;
+import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
+import com.sun.istack.internal.Nullable;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -76,14 +78,14 @@ public class MainGUI extends JFrame {
         String translationPath = edtTranslatedFolder.getText();
         String filteredPath = edtFilteredFolder.getText();
 
-        File originFolder = new File(originPath);
-        File translationFolder = new File(translationPath);
+        File originFolder = checkOrginFolder(originPath);
+        File translationFolder = checkTranslationFolder(translationPath);
         File filteredFolder = new File(filteredPath);
-        if (originPath.length() == 0 || !originFolder.exists() || !originFolder.isDirectory()) {
+        if (originFolder == null) {
             JOptionPane.showMessageDialog(null, "Kiểm tra thư mục ngôn ngữ gốc");
             return;
         }
-        if (translationPath.length() == 0 || !translationFolder.exists() || !translationFolder.isDirectory()) {
+        if (translationFolder == null) {
             JOptionPane.showMessageDialog(null, "Kiểm tra thư mục ngôn ngữ đã dịch");
             return;
         }
@@ -103,6 +105,40 @@ public class MainGUI extends JFrame {
         StringWorker worker = new StringWorker(originFolder, translationFolder, filteredFolder);
         worker.execute();
     }
+
+    private File checkTranslationFolder(String translationPath) {
+        File file = new File(translationPath);
+        if (!file.exists()) return null;
+        if (!file.isDirectory()) return null;
+        if (file.listFiles() == null) return null;
+        int folderCount = 0;
+        String lastFolderName = "";
+        for (File child : Objects.requireNonNull(file.listFiles())) {
+            if (child.isDirectory() && !child.getName().contains(".")) {
+                folderCount++;
+                lastFolderName = child.getName();
+            }
+        }
+        if (!translationPath.endsWith("\\")) translationPath += "\\";
+        String finalName = translationPath + lastFolderName;
+        if (folderCount == 1) return new File(finalName);
+        else if (folderCount > 1) return file;
+        return null;
+    }
+
+    @Nullable
+    private File checkOrginFolder(String originPath) {
+        File file = new File(originPath);
+        if (!file.exists()) return null;
+        if (!file.isDirectory()) return null;
+        if (file.listFiles() == null) return null;
+        for (File child : Objects.requireNonNull(file.listFiles())) {
+            if (child.isDirectory())
+                if (child.getName().equals("Diff_v9-v10")) return file;
+        }
+        return null;
+    }
+
     void deleteDirectoryStream(Path path) throws IOException {
         Files.walk(path)
                 .sorted(Comparator.reverseOrder())
@@ -161,22 +197,25 @@ public class MainGUI extends JFrame {
             originDevices.forEach(originDevice -> {
                 originDevice.getApps().forEach(application -> {
                     if (cbFindFormatedString.isSelected()) {
-                        group(application.getName(), application.getWrongTranslatedOrigins(), originDevice, wrongApplications);
+                        group(application.getName(), application.getWrongTranslatedOriginStrings(), originDevice, wrongApplications);
                     }
 
                     if (cbFindUntranslated.isSelected()) {
                         group(application.getName(), application.getUnTranslatedStrings(), originDevice, untranslatedApplications);
                     }
                     if (cbFindCanRemove.isSelected())
-                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslated());
+                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslatedStrings());
 
                 });
             });
 
             if (cbFindFormatedString.isSelected())
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
-            if (cbFindUntranslated.isSelected())
-                Utils.writeUnTranslatedToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
+            if (cbFindUntranslated.isSelected()) {
+                Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
+                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
+
+            }
             return null;
         }
 
@@ -370,18 +409,23 @@ public class MainGUI extends JFrame {
 
         // JFormDesigner evaluation mark
         setBorder(new javax.swing.border.CompoundBorder(
-            new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                java.awt.Color.red), getBorder())); addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
+                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
+                        "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
+                        javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
+                        java.awt.Color.red), getBorder()));
+        addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent e) {
+                if ("border".equals(e.getPropertyName())) throw new RuntimeException();
+            }
+        });
 
         setLayout(new BorderLayout());
 
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                "7*(default, $lcgap), 71dlu, $lcgap, default, $lcgap, 22dlu",
-                "13*(default, $lgap), default"));
+                    "7*(default, $lcgap), 71dlu, $lcgap, default, $lcgap, 22dlu",
+                    "13*(default, $lgap), default"));
 
             //---- label2 ----
             label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");

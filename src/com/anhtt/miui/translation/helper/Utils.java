@@ -1,6 +1,6 @@
 package com.anhtt.miui.translation.helper;
 
-import com.anhtt.miui.translation.helper.model.StringRes;
+import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.anhtt.miui.translation.helper.model.WrongApplication;
 import com.anhtt.miui.translation.helper.model.WrongStringRes;
 import org.w3c.dom.Document;
@@ -61,12 +61,12 @@ public class Utils {
             writeWrongToFile(absolutePath, wrongApplication);
         }
     }
-    public static void writeUnTranslatedToFile(String absolutePath, List<WrongApplication> wrongApplications) {
+    public static void writeUnTranslatedStringToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
-            writeUnTranslatedToFile(absolutePath, wrongApplication);
+            writeUnTranslatedStringToFile(absolutePath, wrongApplication);
         }
     }
-    public static void writeUnTranslatedToFile(String path, WrongApplication wrongApplication) {
+    public static void writeUnTranslatedStringToFile(String path, WrongApplication wrongApplication) {
         if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
@@ -163,4 +163,51 @@ public class Utils {
         }
     }
 
+
+
+    public static void writeUnTranslatedArrayToFile(String absolutePath, List<WrongApplication> wrongApplications) {
+        for (WrongApplication wrongApplication : wrongApplications) {
+            writeUnTranslatedArrayToFile(absolutePath, wrongApplication);
+        }
+    }
+    public static void writeUnTranslatedArrayToFile(String path, WrongApplication wrongApplication) {
+        if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
+        try {
+            File dir = new File(path + "\\" + wrongApplication.getName());
+            if (!dir.exists()) dir.mkdirs();
+
+            DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+
+            DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+
+            Document document = documentBuilder.newDocument();
+            Element root = document.createElement("resources");
+            document.appendChild(root);
+
+            for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
+                Element stringNode = document.createElement("string");
+                root.appendChild(stringNode);
+                stringNode.setAttribute("name", string.getName());
+                stringNode.setTextContent(string.getValue());
+            }
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource domSource = new DOMSource(document);
+            StringWriter outputXmlStringWriter = new StringWriter();
+            transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+            String outputXmlString = outputXmlStringWriter.toString()
+                    .replaceAll("<string", "\n\t<string")
+                    .replaceAll("<device", "\n\t\t<device")
+                    .replaceAll("<allDevice", "\n<allDevice")
+                    .replaceAll("</allDevice", "\n</allDevice")
+                    .replaceAll("<resources", "\n<resources")
+                    .replaceAll("</resources", "\n</resources");
+
+            FileOutputStream outputXml = new FileOutputStream(path + "\\" + wrongApplication.getName() + "\\arrays.xml");
+            outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+            outputXml.close();
+        } catch (ParserConfigurationException | TransformerException | IOException pce) {
+            pce.printStackTrace();
+        }
+    }
 }

@@ -1,5 +1,7 @@
 package com.anhtt.miui.translation.helper.model;
 
+import com.anhtt.miui.translation.helper.model.res.StringRes;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
