@@ -1,0 +1,169 @@
+JFDML JFormDesigner: "6.0.6.2.195" Java: "1.8.0_152-release" encoding: "UTF-8"
+
+new FormModel {
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class java.awt.BorderLayout ) ) {
+			name: "this"
+			add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
+				"$columnSpecs": "default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default"
+				"$rowSpecs": "default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default"
+			} ) {
+				name: "panel1"
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "label2"
+					"text": "Thư mục gốc"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 1
+					"gridY": 3
+				} )
+				add( new FormComponent( "javax.swing.JTextField" ) {
+					name: "edtOriginFolder"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 3
+					"gridY": 3
+					"gridWidth": 9
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnPickOrigin"
+					"text": "..."
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnPickOriginMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 13
+					"gridY": 3
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "label3"
+					"text": "Thư mục đã dịch"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 1
+					"gridY": 5
+				} )
+				add( new FormComponent( "javax.swing.JTextField" ) {
+					name: "edtTranslatedFolder"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 3
+					"gridY": 5
+					"gridWidth": 9
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnPickTranslated"
+					"text": "..."
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnPickTranslatedMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 13
+					"gridY": 5
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "label6"
+					"text": "Lưu file đã lọc"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 1
+					"gridY": 7
+				} )
+				add( new FormComponent( "javax.swing.JTextField" ) {
+					name: "edtFilteredFolder"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 3
+					"gridY": 7
+					"gridWidth": 9
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnPickFiltered"
+					"text": "..."
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnPickFilteredMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 13
+					"gridY": 7
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "label4"
+					"text": "Tùy chọn dịch"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 1
+					"gridY": 11
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "label5"
+					"text": "Tùy chọn"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 5
+					"gridY": 11
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "cbString"
+					"text": "string"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridY": 13
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "cbFindFormatedString"
+					"text": "Tìm formatted text dịch sai "
+					"selected": true
+					"toolTipText": "Tìm những string có format bị dịch sai do chưa update theo ngôn ngữ mới"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 5
+					"gridY": 13
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "cbArray"
+					"text": "array"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridY": 15
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "cbFindUntranslated"
+					"text": "Tìm text chưa dịch"
+					"toolTipText": "Tìm text chưa dịch trong toàn bộ gói ngôn ngữ, ở tất cả các thiết bị"
+					"selected": true
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 5
+					"gridY": 15
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "cbPlural"
+					"text": "plural"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridY": 17
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "cbFindCanRemove"
+					"text": "Tìm text có thể bỏ"
+					"selected": true
+					"toolTipText": "Những text mà dịch giống hệt gốc có thể bỏ khỏi gói ngôn ngữ"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 5
+					"gridY": 17
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "checkBox1"
+					"text": "So sánh với string bị bỏ qua"
+					"toolTipText": "Bỏ qua text trong danh sách khi quét"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 5
+					"gridY": 19
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnStart"
+					"text": "Bắt đầu"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnStartMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 13
+					"gridY": 23
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "tvLog"
+					"text": "Log"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridY": 25
+					"gridWidth": 13
+				} )
+			}, new FormLayoutConstraints( class java.lang.String ) {
+				"value": "Center"
+			} )
+		}, new FormLayoutConstraints( null ) {
+			"location": new java.awt.Point( 5, 15 )
+			"size": new java.awt.Dimension( 840, 485 )
+		} )
+	}
+}
