@@ -381,7 +381,7 @@ public class MainGUI extends JFrame {
     private void btnMoveToIgnoredMouseClicked(MouseEvent e) {
         if (untranslatedApplications != null && untranslatedApplications.size() > 0) {
             try {
-                Utils.addIgnoredFile(edtResCheckFolder.getText(), untranslatedApplications);
+                Utils.addIgnoredFile(edtResCheckFolder.getText(),edtFilteredFolder.getText(), untranslatedApplications);
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
                 e1.printStackTrace();
             }

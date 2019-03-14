@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 
 public class Utils {
 
@@ -218,15 +219,23 @@ public class Utils {
         }
     }
 
-    public static void addIgnoredFile(String path, List<WrongApplication> untranslatedApplications) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+    public static void addIgnoredFile(String path, String filteredPath, List<WrongApplication> untranslatedApplications) throws ParserConfigurationException, IOException, SAXException, TransformerException {
         File sourceFile = new File(path + "\\MIUI10\\MIUI10_untranslateable.xml");
+        File filteredFile = new File(filteredPath + "\\UnTranslated");
         if (!sourceFile.exists()) return;
-
+        if (!filteredFile.exists() || filteredFile.listFiles() == null) return;
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         Document doc = docBuilder.parse(sourceFile);
         Element root = doc.getDocumentElement();
+
+
+        for (File file : Objects.requireNonNull(filteredFile.listFiles())) {
+            File resFile = new File(file.getAbsolutePath() + "\\strings.xml");
+
+        }
+
 
         for (WrongApplication wrongApplication : untranslatedApplications) {
 
