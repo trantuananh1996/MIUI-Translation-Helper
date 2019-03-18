@@ -5,6 +5,7 @@
 package com.anhtt.miui.translation.helper;
 
 import com.anhtt.miui.translation.helper.model.*;
+import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
@@ -198,11 +199,13 @@ public class MainGUI extends JFrame {
             originDevices.forEach(originDevice -> {
                 originDevice.getApps().forEach(application -> {
                     if (cbFindFormatedString.isSelected()) {
-                        group(application.getName(), application.getWrongTranslatedOriginStrings(), originDevice, wrongApplications);
+                        groupString(application.getName(), application.getWrongTranslatedOriginStrings(), originDevice, wrongApplications);
+                        groupArray(application.getName(), application.getWrongTranslatedOriginArrays(), originDevice, wrongApplications);
                     }
 
                     if (cbFindUntranslated.isSelected()) {
-                        group(application.getName(), application.getUnTranslatedStrings(), originDevice, untranslatedApplications);
+                        groupString(application.getName(), application.getUnTranslatedStrings(), originDevice, untranslatedApplications);
+                        groupArray(application.getName(), application.getUnTranslatedArrays(), originDevice, untranslatedApplications);
                     }
                     if (cbFindCanRemove.isSelected())
                         Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslatedStrings());
@@ -232,7 +235,7 @@ public class MainGUI extends JFrame {
         }
     }
 
-    private void group(String appName, List<StringRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
+    private void groupString(String appName, List<StringRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
@@ -244,7 +247,18 @@ public class MainGUI extends JFrame {
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
-
+    private void groupArray(String appName, List<ArrayRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        for (int i = 0; i < stringToGroups.size(); i++) {
+            ArrayRes origin = stringToGroups.get(i);
+            wrongApplication.addOrigin(originDevices.size(), originDevice, origin);
+        }
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
     private List<UnTranslateable> createAutoIgnoredList() throws ParserConfigurationException, IOException, SAXException {
         List<UnTranslateable> unTranslateables = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();

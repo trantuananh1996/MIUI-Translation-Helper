@@ -1,7 +1,9 @@
 package com.anhtt.miui.translation.helper;
 
 import com.anhtt.miui.translation.helper.model.WrongApplication;
+import com.anhtt.miui.translation.helper.model.WrongArrayRes;
 import com.anhtt.miui.translation.helper.model.WrongStringRes;
+import com.anhtt.miui.translation.helper.model.res.Item;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -74,7 +76,7 @@ public class Utils {
     }
 
     public static void writeUnTranslatedStringToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
+        if (wrongApplication.getWrongTranslatedOriginStrings().size() == 0) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -87,7 +89,7 @@ public class Utils {
             Element root = document.createElement("resources");
             document.appendChild(root);
 
-            for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
+            for (WrongStringRes string : wrongApplication.getWrongTranslatedOriginStrings()) {
                 Element stringNode = document.createElement("string");
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());
@@ -115,7 +117,7 @@ public class Utils {
     }
 
     public static void writeWrongToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
+        if (wrongApplication.getWrongTranslatedOriginStrings().size() == 0) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -132,7 +134,7 @@ public class Utils {
             Element specificRoot = document.createElement("specificDevice");
             root.appendChild(specificRoot);
 
-            for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
+            for (WrongStringRes string : wrongApplication.getWrongTranslatedOriginStrings()) {
                 if (!string.getDevices().contains("all")) {
                     Element stringNode = document.createElement("string");
                     specificRoot.appendChild(stringNode);
@@ -179,7 +181,7 @@ public class Utils {
     }
 
     public static void writeUnTranslatedArrayToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOrigins().size() == 0) return;
+        if (wrongApplication.getWrongTranslatedOriginArrays().size() == 0) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -192,11 +194,15 @@ public class Utils {
             Element root = document.createElement("resources");
             document.appendChild(root);
 
-            for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
-                Element stringNode = document.createElement("string");
+            for (WrongArrayRes string : wrongApplication.getWrongTranslatedOriginArrays()) {
+                Element stringNode = document.createElement(string.getArrayType());
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());
-                stringNode.setTextContent(string.getValue());
+                for (Item item : string.getItems()) {
+                    Element itemNode = document.createElement("item");
+                    stringNode.appendChild(itemNode);
+                    itemNode.setTextContent(item.getValue());
+                }
             }
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
             Transformer transformer = transformerFactory.newTransformer();
@@ -205,6 +211,10 @@ public class Utils {
             transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
             String outputXmlString = outputXmlStringWriter.toString()
                     .replaceAll("<string", "\n\t<string")
+                    .replaceAll("</string", "\n\t</string")
+                    .replaceAll("<array", "\n\t<array")
+                    .replaceAll("</array", "\n\t</array")
+                    .replaceAll("<item", "\n\t\t<item")
                     .replaceAll("<device", "\n\t\t<device")
                     .replaceAll("<allDevice", "\n<allDevice")
                     .replaceAll("</allDevice", "\n</allDevice")
@@ -240,12 +250,20 @@ public class Utils {
         for (WrongApplication wrongApplication : untranslatedApplications) {
 
 
-            for (WrongStringRes string : wrongApplication.getWrongTranslatedOrigins()) {
+            for (WrongStringRes string : wrongApplication.getWrongTranslatedOriginStrings()) {
                 Element item = doc.createElement("item");
                 root.appendChild(item);
                 item.setAttribute("folder", "all");
                 item.setAttribute("application", wrongApplication.getName());
                 item.setAttribute("file", "strings.xml");
+                item.setAttribute("name", string.getName());
+            }
+            for (WrongArrayRes string : wrongApplication.getWrongTranslatedOriginArrays()) {
+                Element item = doc.createElement("item");
+                root.appendChild(item);
+                item.setAttribute("folder", "all");
+                item.setAttribute("application", wrongApplication.getName());
+                item.setAttribute("file", "arrays.xml");
                 item.setAttribute("name", string.getName());
             }
         }
@@ -267,6 +285,6 @@ public class Utils {
         FileOutputStream outputXml = new FileOutputStream(sourceFile.getAbsolutePath());
         outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
         outputXml.close();
-
+        System.out.println("Done");
     }
 }

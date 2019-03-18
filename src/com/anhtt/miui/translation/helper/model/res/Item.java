@@ -8,6 +8,6 @@ public class Item {
     }
 
     public String getValue() {
-        return value;
+        return value.trim();
     }
 }

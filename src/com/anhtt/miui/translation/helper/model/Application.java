@@ -38,6 +38,34 @@ public class Application {
         return originStrings;
     }
 
+    public List<ArrayRes> getTranslatedArrays() {
+        return translatedArrays;
+    }
+
+    public List<ArrayRes> getUnTranslatedArrays() {
+        return unTranslatedArrays;
+    }
+
+    public List<ArrayRes> getWrongTranslatedOriginArrays() {
+        return wrongTranslatedOriginArrays;
+    }
+
+    public List<ArrayRes> getWrongTranslatedArrays() {
+        return wrongTranslatedArrays;
+    }
+
+    public List<ArrayRes> getMightNotTranslatedArrays() {
+        return mightNotTranslatedArrays;
+    }
+
+    public List<ArrayRes> getCanNotTranslateArrays() {
+        return canNotTranslateArrays;
+    }
+
+    public List<ArrayRes> getOriginEqualTranslatedArrays() {
+        return originEqualTranslatedArrays;
+    }
+
     public List<StringRes> getTranslatedStrings() {
         return translatedStrings;
     }
@@ -134,9 +162,9 @@ public class Application {
         File file = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
         if(!file.exists()) return;
         Document doc = docBuilder.parse(file);
-        NodeList list = doc.getElementsByTagName("array");
+        NodeList list = doc.getElementsByTagName("string-array");
         for (int i = 0; i < list.getLength(); i++) {
-            ArrayRes stringRes = ArrayRes.create((Element) list.item(i));
+            ArrayRes stringRes = ArrayRes.create((Element)list.item(i));
             if (stringRes != null) originArrays.add(stringRes);
         }
     }
@@ -222,7 +250,7 @@ public class Application {
                             wrongTranslatedOriginArrays.add(arrayRes);
                             wrongTranslatedArrays.add(translatedArray);
                         }
-                    } else if (arrayRes.equals(translatedArray)) {
+                    } else if (arrayRes.equalsExact(translatedArray)) {
                         //Có dịch nhưng mà dịch cũng như ko vì nó giống nhau
                         originEqualTranslatedArrays.add(arrayRes);
                     } else {
