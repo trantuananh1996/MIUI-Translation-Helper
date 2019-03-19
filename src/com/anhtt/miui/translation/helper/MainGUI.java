@@ -49,7 +49,7 @@ public class MainGUI extends JFrame {
     public MainGUI() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         initComponents();
-        setSize(500, 340);
+        setSize(500, 500);
         setLocationRelativeTo(getOwner());
         tvLogStatic = tvLog;
         //TODO: For fast testing
@@ -213,11 +213,13 @@ public class MainGUI extends JFrame {
                 });
             });
 
-            if (cbFindFormatedString.isSelected())
+            if (cbFindFormatedString.isSelected()) {
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
+                Utils.writeWronArray(filteredFolder.getAbsolutePath() + "\\WrongsArray", wrongApplications);
+            }
             if (cbFindUntranslated.isSelected()) {
                 Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
-                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
+                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArray", untranslatedApplications);
 
             }
             return null;
@@ -247,6 +249,7 @@ public class MainGUI extends JFrame {
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
+
     private void groupArray(String appName, List<ArrayRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
@@ -259,6 +262,7 @@ public class MainGUI extends JFrame {
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
+
     private List<UnTranslateable> createAutoIgnoredList() throws ParserConfigurationException, IOException, SAXException {
         List<UnTranslateable> unTranslateables = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -395,7 +399,7 @@ public class MainGUI extends JFrame {
     private void btnMoveToIgnoredMouseClicked(MouseEvent e) {
         if (untranslatedApplications != null && untranslatedApplications.size() > 0) {
             try {
-                Utils.addIgnoredFile(edtResCheckFolder.getText(),edtFilteredFolder.getText(), untranslatedApplications);
+                Utils.addIgnoredFile(edtResCheckFolder.getText(), edtFilteredFolder.getText(), untranslatedApplications);
             } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
                 e1.printStackTrace();
             }
@@ -426,6 +430,7 @@ public class MainGUI extends JFrame {
         cbArray = new JCheckBox();
         cbFindUntranslated = new JCheckBox();
         cbPlural = new JCheckBox();
+        checkBox2 = new JCheckBox();
         cbFindCanRemove = new JCheckBox();
         checkBox1 = new JCheckBox();
         btnStart = new JButton();
@@ -451,7 +456,7 @@ public class MainGUI extends JFrame {
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                    "7*(default, $lcgap), 71dlu, $lcgap, default, $lcgap, 22dlu",
+                    "2*(default, $lcgap), $lcgap, 22dlu, 85dlu, 3*($lcgap, default), $lcgap, 71dlu, $lcgap, default, $lcgap, 22dlu",
                     "13*(default, $lgap), default"));
 
             //---- label2 ----
@@ -520,7 +525,7 @@ public class MainGUI extends JFrame {
 
             //---- label5 ----
             label5.setText("T\u00f9y ch\u1ecdn");
-            panel1.add(label5, CC.xy(5, 13));
+            panel1.add(label5, CC.xywh(6, 13, 2, 1));
 
             //---- cbString ----
             cbString.setText("string");
@@ -530,7 +535,7 @@ public class MainGUI extends JFrame {
             cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
             cbFindFormatedString.setSelected(true);
             cbFindFormatedString.setToolTipText("T\u00ecm nh\u1eefng string c\u00f3 format b\u1ecb d\u1ecbch sai do ch\u01b0a update theo ng\u00f4n ng\u1eef m\u1edbi");
-            panel1.add(cbFindFormatedString, CC.xy(5, 15));
+            panel1.add(cbFindFormatedString, CC.xywh(6, 15, 2, 1));
 
             //---- cbArray ----
             cbArray.setText("array");
@@ -540,22 +545,26 @@ public class MainGUI extends JFrame {
             cbFindUntranslated.setText("T\u00ecm text ch\u01b0a d\u1ecbch");
             cbFindUntranslated.setToolTipText("T\u00ecm text ch\u01b0a d\u1ecbch trong to\u00e0n b\u1ed9 g\u00f3i ng\u00f4n ng\u1eef, \u1edf t\u1ea5t c\u1ea3 c\u00e1c thi\u1ebft b\u1ecb");
             cbFindUntranslated.setSelected(true);
-            panel1.add(cbFindUntranslated, CC.xy(5, 17));
+            panel1.add(cbFindUntranslated, CC.xywh(6, 17, 2, 1));
 
             //---- cbPlural ----
             cbPlural.setText("plural");
             panel1.add(cbPlural, CC.xy(1, 19));
 
+            //---- checkBox2 ----
+            checkBox2.setText("Ch\u1ec9 t\u00ecm text ch\u01b0a c\u00f3 \u1edf b\u1ea5t k\u1ef3 app n\u00e0o");
+            panel1.add(checkBox2, CC.xywh(7, 19, 7, 1));
+
             //---- cbFindCanRemove ----
             cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
             cbFindCanRemove.setSelected(true);
             cbFindCanRemove.setToolTipText("Nh\u1eefng text m\u00e0 d\u1ecbch gi\u1ed1ng h\u1ec7t g\u1ed1c c\u00f3 th\u1ec3 b\u1ecf kh\u1ecfi g\u00f3i ng\u00f4n ng\u1eef");
-            panel1.add(cbFindCanRemove, CC.xy(5, 19));
+            panel1.add(cbFindCanRemove, CC.xywh(6, 21, 2, 1));
 
             //---- checkBox1 ----
             checkBox1.setText("So s\u00e1nh v\u1edbi string b\u1ecb b\u1ecf qua");
             checkBox1.setToolTipText("B\u1ecf qua text trong danh s\u00e1ch khi qu\u00e9t");
-            panel1.add(checkBox1, CC.xy(5, 21));
+            panel1.add(checkBox1, CC.xywh(6, 23, 2, 1));
 
             //---- btnStart ----
             btnStart.setText("B\u1eaft \u0111\u1ea7u");
@@ -615,6 +624,7 @@ public class MainGUI extends JFrame {
     private JCheckBox cbArray;
     private JCheckBox cbFindUntranslated;
     private JCheckBox cbPlural;
+    private JCheckBox checkBox2;
     private JCheckBox cbFindCanRemove;
     private JCheckBox checkBox1;
     private JButton btnStart;

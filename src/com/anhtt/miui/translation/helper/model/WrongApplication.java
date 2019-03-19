@@ -43,7 +43,7 @@ public class WrongApplication {
         Optional<WrongStringRes> hasString = wrongTranslatedOriginStrings.stream().filter(stringRes1 -> stringRes1.getName().equals(origin.getName()) && stringRes1.getValue().equals(origin.getValue())).findFirst();
         WrongStringRes wrongStringRes;
         if (!hasString.isPresent()) {
-            wrongStringRes = new WrongStringRes(origin.getName(), origin.getValue());
+            wrongStringRes = new WrongStringRes(origin.getName(), origin.getValue(),origin.isFormatted());
             wrongStringRes.addDevice(originDevice.getName());
             wrongTranslatedOriginStrings.add(wrongStringRes);
         } else {

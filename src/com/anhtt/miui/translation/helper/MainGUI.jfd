@@ -6,7 +6,7 @@ new FormModel {
 		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class java.awt.BorderLayout ) ) {
 			name: "this"
 			add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
-				"$columnSpecs": "default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, 71dlu, labelcompgap, default, labelcompgap, 22dlu"
+				"$columnSpecs": "default, labelcompgap, default, labelcompgap, labelcompgap, 22dlu, 85dlu, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, 71dlu, labelcompgap, default, labelcompgap, 22dlu"
 				"$rowSpecs": "default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default"
 			} ) {
 				name: "panel1"
@@ -108,8 +108,9 @@ new FormModel {
 					name: "label5"
 					"text": "Tùy chọn"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 5
+					"gridX": 6
 					"gridY": 13
+					"gridWidth": 2
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "cbString"
@@ -123,8 +124,9 @@ new FormModel {
 					"selected": true
 					"toolTipText": "Tìm những string có format bị dịch sai do chưa update theo ngôn ngữ mới"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 5
+					"gridX": 6
 					"gridY": 15
+					"gridWidth": 2
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "cbArray"
@@ -138,8 +140,9 @@ new FormModel {
 					"toolTipText": "Tìm text chưa dịch trong toàn bộ gói ngôn ngữ, ở tất cả các thiết bị"
 					"selected": true
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 5
+					"gridX": 6
 					"gridY": 17
+					"gridWidth": 2
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "cbPlural"
@@ -148,21 +151,31 @@ new FormModel {
 					"gridY": 19
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
+					name: "checkBox2"
+					"text": "Chỉ tìm text chưa có ở bất kỳ app nào"
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 7
+					"gridY": 19
+					"gridWidth": 7
+				} )
+				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "cbFindCanRemove"
 					"text": "Tìm text có thể bỏ"
 					"selected": true
 					"toolTipText": "Những text mà dịch giống hệt gốc có thể bỏ khỏi gói ngôn ngữ"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 5
-					"gridY": 19
+					"gridX": 6
+					"gridY": 21
+					"gridWidth": 2
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "checkBox1"
 					"text": "So sánh với string bị bỏ qua"
 					"toolTipText": "Bỏ qua text trong danh sách khi quét"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 5
-					"gridY": 21
+					"gridX": 6
+					"gridY": 23
+					"gridWidth": 2
 				} )
 				add( new FormComponent( "javax.swing.JButton" ) {
 					name: "btnStart"

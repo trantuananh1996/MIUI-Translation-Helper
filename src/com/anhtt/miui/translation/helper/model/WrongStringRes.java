@@ -28,7 +28,8 @@ public class WrongStringRes {
         return formatted;
     }
 
-    public WrongStringRes(String name, String value) {
+    public WrongStringRes(String name, String value, boolean formatted) {
+        this.formatted = formatted;
         this.name = name;
         this.value = value;
     }

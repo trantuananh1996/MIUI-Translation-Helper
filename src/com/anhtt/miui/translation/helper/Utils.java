@@ -45,6 +45,7 @@ public class Utils {
                 Element stringNode = document.createElement("string");
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());
+                if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
                 stringNode.setTextContent(string.getValue());
             }
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -66,6 +67,12 @@ public class Utils {
     public static void writeWrongToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
             writeWrongToFile(absolutePath, wrongApplication);
+        }
+    }
+
+    public static void writeWronArray(String absolutePath, List<WrongApplication> wrongApplications) {
+        for (WrongApplication wrongApplication : wrongApplications) {
+            writeWrongArrayToFile(absolutePath, wrongApplication);
         }
     }
 
@@ -93,6 +100,7 @@ public class Utils {
                 Element stringNode = document.createElement("string");
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());
+                if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
                 stringNode.setTextContent(string.getValue());
             }
             TransformerFactory transformerFactory = TransformerFactory.newInstance();
@@ -139,15 +147,23 @@ public class Utils {
                     Element stringNode = document.createElement("string");
                     specificRoot.appendChild(stringNode);
                     stringNode.setAttribute("name", string.getName());
+                    if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
                     stringNode.setTextContent(string.getValue());
+
+                    Element countNode = document.createElement("count");
+                    stringNode.appendChild(countNode);
+                    countNode.setTextContent(string.getDevices().size() + "");
 
                     Element childNode = document.createElement("device");
                     stringNode.appendChild(childNode);
                     childNode.setTextContent(string.getDevices().toString());
+
+
                 } else {
                     Element stringNode = document.createElement("string");
                     allDeviceRoot.appendChild(stringNode);
                     stringNode.setAttribute("name", string.getName());
+                    if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
                     stringNode.setTextContent(string.getValue());
                 }
             }
@@ -158,6 +174,7 @@ public class Utils {
             transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
             String outputXmlString = outputXmlStringWriter.toString()
                     .replaceAll("<string", "\n\t<string")
+                    .replaceAll("<count", "\n\t<count")
                     .replaceAll("</string", "\n\t</string")
                     .replaceAll("<device", "\n\t\t<device")
                     .replaceAll("<allDevice", "\n<allDevice")
@@ -173,6 +190,78 @@ public class Utils {
         }
     }
 
+    public static void writeWrongArrayToFile(String path, WrongApplication wrongApplication) {
+        if (wrongApplication.getWrongTranslatedOriginArrays().size() == 0) return;
+        try {
+            File dir = new File(path + "\\" + wrongApplication.getName());
+            if (!dir.exists()) dir.mkdirs();
+
+            DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+
+            DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+
+            Document document = documentBuilder.newDocument();
+            Element root = document.createElement("resources");
+            document.appendChild(root);
+            Element allDeviceRoot = document.createElement("allDevice");
+            root.appendChild(allDeviceRoot);
+            Element specificRoot = document.createElement("specificDevice");
+            root.appendChild(specificRoot);
+
+            for (WrongArrayRes string : wrongApplication.getWrongTranslatedOriginArrays()) {
+                if (!string.getDevices().contains("all")) {
+                    Element stringNode = document.createElement("string");
+                    specificRoot.appendChild(stringNode);
+                    stringNode.setAttribute("name", string.getName());
+                    if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
+                    for (Item item : string.getItems()) {
+                        Element itemNode = document.createElement("item");
+                        stringNode.appendChild(itemNode);
+                        itemNode.setTextContent(item.getValue());
+                    }
+                    Element countNode = document.createElement("count");
+                    stringNode.appendChild(countNode);
+                    countNode.setTextContent(string.getDevices().size() + "");
+
+                    Element childNode = document.createElement("device");
+                    stringNode.appendChild(childNode);
+                    childNode.setTextContent(string.getDevices().toString());
+
+
+                } else {
+                    Element stringNode = document.createElement("string");
+                    allDeviceRoot.appendChild(stringNode);
+                    stringNode.setAttribute("name", string.getName());
+                    if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
+                    for (Item item : string.getItems()) {
+                        Element itemNode = document.createElement("item");
+                        stringNode.appendChild(itemNode);
+                        itemNode.setTextContent(item.getValue());
+                    }
+                }
+            }
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource domSource = new DOMSource(document);
+            StringWriter outputXmlStringWriter = new StringWriter();
+            transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+            String outputXmlString = outputXmlStringWriter.toString()
+                    .replaceAll("<string", "\n\t<string")
+                    .replaceAll("<count", "\n\t<count")
+                    .replaceAll("</string", "\n\t</string")
+                    .replaceAll("<device", "\n\t\t<device")
+                    .replaceAll("<allDevice", "\n<allDevice")
+                    .replaceAll("</allDevice", "\n</allDevice")
+                    .replaceAll("<specificDevice", "\n<specificDevice")
+                    .replaceAll("</specificDevice", "\n</specificDevice");
+
+            FileOutputStream outputXml = new FileOutputStream(path + "\\" + wrongApplication.getName() + "\\arrays.xml");
+            outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+            outputXml.close();
+        } catch (ParserConfigurationException | TransformerException | IOException pce) {
+            pce.printStackTrace();
+        }
+    }
 
     public static void writeUnTranslatedArrayToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
@@ -198,6 +287,7 @@ public class Utils {
                 Element stringNode = document.createElement(string.getArrayType());
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());
+                if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
                 for (Item item : string.getItems()) {
                     Element itemNode = document.createElement("item");
                     stringNode.appendChild(itemNode);
