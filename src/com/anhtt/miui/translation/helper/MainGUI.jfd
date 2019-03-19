@@ -7,7 +7,7 @@ new FormModel {
 			name: "this"
 			add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
 				"$columnSpecs": "default, labelcompgap, default, labelcompgap, labelcompgap, 22dlu, 85dlu, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, 71dlu, labelcompgap, default, labelcompgap, 22dlu"
-				"$rowSpecs": "default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default"
+				"$rowSpecs": "default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default"
 			} ) {
 				name: "panel1"
 				add( new FormComponent( "javax.swing.JLabel" ) {
@@ -152,11 +152,11 @@ new FormModel {
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "checkBox2"
-					"text": "Chỉ tìm text chưa có ở bất kỳ app nào"
+					"text": "Chỉ tìm text chưa có ở bất kỳ app nào (lâu hơn rất nhiều)"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
 					"gridX": 7
 					"gridY": 19
-					"gridWidth": 7
+					"gridWidth": 13
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
 					name: "cbFindCanRemove"
@@ -186,6 +186,15 @@ new FormModel {
 					"gridY": 23
 				} )
 				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnStop"
+					"text": "Dừng"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "button1MouseClicked", true ) )
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnStopMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 17
+					"gridY": 23
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
 					name: "btnMoveToIgnored"
 					"text": "Chuyển string chưa dịch vào ignore"
 					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnMoveToIgnoredMouseClicked", true ) )
@@ -194,11 +203,20 @@ new FormModel {
 					"gridY": 25
 					"gridWidth": 9
 				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnCheckDuplicate"
+					"text": "Kiểm tra trùng lặp"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnCheckDuplicateMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 15
+					"gridY": 27
+					"gridWidth": 3
+				} )
 				add( new FormComponent( "javax.swing.JLabel" ) {
 					name: "tvLog"
 					"text": "Log"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridY": 27
+					"gridY": 29
 					"gridWidth": 13
 				} )
 			}, new FormLayoutConstraints( class java.lang.String ) {

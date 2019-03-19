@@ -1,8 +1,6 @@
 package com.anhtt.miui.translation.helper.model.res;
 
 import com.sun.istack.internal.Nullable;
-import com.sun.org.apache.xerces.internal.dom.DeferredElementImpl;
-import com.sun.org.apache.xerces.internal.dom.DeferredTextImpl;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -10,6 +8,8 @@ import org.w3c.dom.NodeList;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static com.anhtt.miui.translation.helper.Utils.isNumeric;
 
 public class ArrayRes implements Resource<ArrayRes> {
     String name;
@@ -46,14 +46,36 @@ public class ArrayRes implements Resource<ArrayRes> {
                 name = attr.getNodeValue();
         }
 
+        if (name == null
+                || name.length() == 0
+                || name.contains("alphabet_table")
+                || name.contains("_locale")
+                || name.contains("region_global")
+                || name.contains("device_")
+                || name.contains("_region")
+        ) return null;
+
+
         List<Item> items = new ArrayList<>();
         NodeList list = element.getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
-            Node child =  list.item(i);
-            if(child.getNodeName().equals("item"))
-            items.add(new Item(child.getTextContent()));
+            Node child = list.item(i);
+            if (child.getNodeName().equals("item"))
+                items.add(new Item(child.getTextContent()));
         }
-        if (name != null && name.length() > 0 && arrayType != null && arrayType.length() > 0) {
+        //Bỏ qua nếu tất cả là số hoặc string res; tất cả là package name dạng com.abc
+        if (items.stream().allMatch(item -> item.getValue().contains("string/")
+                || item.getValue().contains("android:string/")
+                || isNumeric(item.getValue())
+                || item.getValue().contains("drawable/")
+                || item.getValue().contains("android:drawable/"))
+
+                || items.stream().allMatch(item -> item.getValue().contains("com.") && !item.getValue().contains(" "))
+                || items.stream().allMatch(item -> item.getValue().length() > 15 && !item.getValue().contains(" "))
+                || items.stream().allMatch(item -> item.getValue().equals("%1$s"))
+
+        ) return null;
+        if (arrayType != null && arrayType.length() > 0) {
             ArrayRes arrayRes = new ArrayRes(name, arrayType);
             arrayRes.setItems(items);
             return arrayRes;
@@ -61,6 +83,7 @@ public class ArrayRes implements Resource<ArrayRes> {
 
         return null;
     }
+
 
     public ArrayRes(String name) {
         this.name = name;
@@ -89,6 +112,7 @@ public class ArrayRes implements Resource<ArrayRes> {
             return false;
         return true;
     }
+
     public boolean equalsExact(ArrayRes origin) {
         if (!name.equals(origin.getName())) return false;
         if (items == null && origin.getItems() != null) return false;

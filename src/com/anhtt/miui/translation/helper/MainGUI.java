@@ -42,7 +42,7 @@ public class MainGUI extends JFrame {
     public static List<UnTranslateable> autoIgnoredList;
     public static List<WrongStringRes> wrongTranslateGlobals = new ArrayList<>();
     public static List<WrongStringRes> wrongTranslateGlobalOrigin = new ArrayList<>();
-
+    StringWorker worker;
     public List<WrongApplication> wrongApplications = new ArrayList<>();
     public List<WrongApplication> untranslatedApplications = new ArrayList<>();
 
@@ -104,7 +104,7 @@ public class MainGUI extends JFrame {
 
         tvLog.setText("Đang chuẩn bị...");
 
-        StringWorker worker = new StringWorker(originFolder, translationFolder, filteredFolder);
+        worker = new StringWorker(originFolder, translationFolder, filteredFolder);
         worker.execute();
     }
 
@@ -213,13 +213,11 @@ public class MainGUI extends JFrame {
                 });
             });
 
-            if (cbFindFormatedString.isSelected()) {
+            if (cbFindFormatedString.isSelected())
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
-                Utils.writeWronArray(filteredFolder.getAbsolutePath() + "\\WrongsArray", wrongApplications);
-            }
             if (cbFindUntranslated.isSelected()) {
                 Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
-                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArray", untranslatedApplications);
+                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
 
             }
             return null;
@@ -407,6 +405,35 @@ public class MainGUI extends JFrame {
 
     }
 
+
+    private void btnStopMouseClicked(MouseEvent e) {
+        worker.done();
+        worker.cancel(true);
+        tvLog.setText("Đã hủy quá trình");
+    }
+
+    private void button1MouseClicked(MouseEvent e) {
+        // TODO add your code here
+    }
+
+    private void btnCheckDuplicateMouseClicked(MouseEvent e) {
+
+        File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
+        if (!transDevicesFolder.exists()) return;
+        TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath());
+        if (transDevices == null) return;
+        List<String> duplicate = new ArrayList<>();
+        transDevices.getApps().forEach(application -> {
+            System.out.println(application.getName());
+            application.getOriginString().forEach(stringRes -> {
+                long count = application.getOriginString().stream().filter(other -> other.getName().equals(stringRes.getName())).count();
+                if (count > 1 && !duplicate.contains(stringRes.getName())) duplicate.add(stringRes.getName());
+            });
+        });
+        System.out.println(duplicate);
+    }
+
+
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
@@ -434,30 +461,27 @@ public class MainGUI extends JFrame {
         cbFindCanRemove = new JCheckBox();
         checkBox1 = new JCheckBox();
         btnStart = new JButton();
+        btnStop = new JButton();
         btnMoveToIgnored = new JButton();
+        btnCheckDuplicate = new JButton();
         tvLog = new JLabel();
 
         //======== this ========
 
         // JFormDesigner evaluation mark
         setBorder(new javax.swing.border.CompoundBorder(
-                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                        "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                        javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                        java.awt.Color.red), getBorder()));
-        addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent e) {
-                if ("border".equals(e.getPropertyName())) throw new RuntimeException();
-            }
-        });
+            new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
+                "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
+                javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
+                java.awt.Color.red), getBorder())); addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
 
         setLayout(new BorderLayout());
 
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                    "2*(default, $lcgap), $lcgap, 22dlu, 85dlu, 3*($lcgap, default), $lcgap, 71dlu, $lcgap, default, $lcgap, 22dlu",
-                    "13*(default, $lgap), default"));
+                "2*(default, $lcgap), $lcgap, 22dlu, 85dlu, 3*($lcgap, default), $lcgap, 71dlu, $lcgap, default, $lcgap, 22dlu",
+                "14*(default, $lgap), default"));
 
             //---- label2 ----
             label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
@@ -552,8 +576,8 @@ public class MainGUI extends JFrame {
             panel1.add(cbPlural, CC.xy(1, 19));
 
             //---- checkBox2 ----
-            checkBox2.setText("Ch\u1ec9 t\u00ecm text ch\u01b0a c\u00f3 \u1edf b\u1ea5t k\u1ef3 app n\u00e0o");
-            panel1.add(checkBox2, CC.xywh(7, 19, 7, 1));
+            checkBox2.setText("Ch\u1ec9 t\u00ecm text ch\u01b0a c\u00f3 \u1edf b\u1ea5t k\u1ef3 app n\u00e0o (l\u00e2u h\u01a1n r\u1ea5t nhi\u1ec1u)");
+            panel1.add(checkBox2, CC.xywh(7, 19, 13, 1));
 
             //---- cbFindCanRemove ----
             cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
@@ -576,6 +600,17 @@ public class MainGUI extends JFrame {
             });
             panel1.add(btnStart, CC.xy(15, 23));
 
+            //---- btnStop ----
+            btnStop.setText("D\u1eebng");
+            btnStop.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    button1MouseClicked(e);
+                    btnStopMouseClicked(e);
+                }
+            });
+            panel1.add(btnStop, CC.xy(17, 23));
+
             //---- btnMoveToIgnored ----
             btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
             btnMoveToIgnored.addMouseListener(new MouseAdapter() {
@@ -586,9 +621,19 @@ public class MainGUI extends JFrame {
             });
             panel1.add(btnMoveToIgnored, CC.xywh(11, 25, 9, 1));
 
+            //---- btnCheckDuplicate ----
+            btnCheckDuplicate.setText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p");
+            btnCheckDuplicate.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnCheckDuplicateMouseClicked(e);
+                }
+            });
+            panel1.add(btnCheckDuplicate, CC.xywh(15, 27, 3, 1));
+
             //---- tvLog ----
             tvLog.setText("Log");
-            panel1.add(tvLog, CC.xywh(1, 27, 13, 1));
+            panel1.add(tvLog, CC.xywh(1, 29, 13, 1));
         }
         add(panel1, BorderLayout.CENTER);
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
@@ -628,7 +673,9 @@ public class MainGUI extends JFrame {
     private JCheckBox cbFindCanRemove;
     private JCheckBox checkBox1;
     private JButton btnStart;
+    private JButton btnStop;
     private JButton btnMoveToIgnored;
+    private JButton btnCheckDuplicate;
     private JLabel tvLog;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }

@@ -22,10 +22,38 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 public class Utils {
+    public static boolean isNumeric(String str) {
+        String string = str.replaceAll("\\.", "")
+                .replaceAll(":", "")
+                .replaceAll(",", "")
+                .replaceAll("-", "")
+                .replaceAll(" ", "")
+                .replaceAll("\"", "")
+                .replaceAll("\\(", "")
+                .replaceAll("\\)", "")
+                .replaceAll("°", "")
+                .replaceAll("%s", "")
+                .replaceAll("%d", "")
+                .replaceAll(";", "")
+                .replaceAll("%", "")
+                .replaceAll("\\$s", "")
+                .replaceAll("\\$d", "")
+                .replaceAll("\\+", "")
+                .replaceAll("\\\\", "")
+                .replaceAll("/", "");
+        if (string.length() == 0) return true;
+        NumberFormat formatter = NumberFormat.getInstance();
+        ParsePosition pos = new ParsePosition(0);
+        formatter.parse(string, pos);
+        return string.length() == pos.getIndex();
+    }
 
     public static void writeStringsToFile(String path, List<StringRes> stringRes) {
         if (stringRes.size() == 0) return;
@@ -76,9 +104,17 @@ public class Utils {
         }
     }
 
+    private static boolean isIgnoredDevice(String name) {
+        List<String> strings = Arrays.asList("XiaomiEUTools.apk", "AutoDialer.apk", "Cit.apk", "cit_nikel.apk", "mediatek-res.apk", "SimContacts.apk"
+                , "PrintRecommendationService.apk", "BSPTelephonyDevTool.apk", "BtTool.apk", "cit.apk", "EngineerMode.apk", "FactoryKitTest.apk", "FactoryMode.apk"
+                , "imssettings.apk", "Mimoji.apk", "NQNfcNci.apk", "Traceur.apk","Cit.apk");
+        return strings.contains(name);
+    }
+
     public static void writeUnTranslatedStringToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
-            writeUnTranslatedStringToFile(absolutePath, wrongApplication);
+            if (!isIgnoredDevice(wrongApplication.getName()))
+                writeUnTranslatedStringToFile(absolutePath, wrongApplication);
         }
     }
 

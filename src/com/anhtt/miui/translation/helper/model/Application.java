@@ -34,6 +34,7 @@ public class Application {
     List<ArrayRes> mightNotTranslatedArrays = new ArrayList<>();//Array giống nhau giữa gốc và dịch, có thể bỏ
     List<ArrayRes> canNotTranslateArrays = new ArrayList<>();//Array không thể dịch
     List<ArrayRes> originEqualTranslatedArrays = new ArrayList<>();//Dịch giống gốc
+
     public List<StringRes> getOriginStrings() {
         return originStrings;
     }
@@ -160,16 +161,16 @@ public class Application {
         if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi-rVN");
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
-        if(!file.exists()) return;
+        if (!file.exists()) return;
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("string-array");
         for (int i = 0; i < list.getLength(); i++) {
-            ArrayRes stringRes = ArrayRes.create((Element)list.item(i));
+            ArrayRes stringRes = ArrayRes.create((Element) list.item(i));
             if (stringRes != null) originArrays.add(stringRes);
         }
     }
 
-    public void compare(OriginDevice originDevice, Application specificedApp, Application translatedApp) {
+    public void compare(OriginDevice originDevice, Application specificedApp, Application translatedApp, TranslatedDevice transDevices) {
         if (translatedApp == null) {
             unTranslatedStrings.addAll(originStrings);
             return;
@@ -183,8 +184,8 @@ public class Application {
 //                return unTranslateable.getApplication().equals(getName())
 //                        && unTranslateable.getName().equals(originString.getName());
 //            });
-            StringRes translatedString = findTranslatedString(originString, translatedApp, false);
-            StringRes specificString = findTranslatedString(originString, specificedApp, true);
+            StringRes translatedString = findTranslatedString(originString, translatedApp, transDevices, false);
+            StringRes specificString = findTranslatedString(originString, specificedApp, transDevices, true);
 
             if (canNotTranslate) {
                 //Nếu là string không thể dịch, mà đã có dịch rồi thì add vào
@@ -269,10 +270,18 @@ public class Application {
 
 
     @Nullable
-    private StringRes findTranslatedString(StringRes originString, Application translatedApp, boolean isSpecific) {
+    private StringRes findTranslatedString(StringRes originString, Application translatedApp, TranslatedDevice transDevices, boolean isSpecific) {
         if (translatedApp == null) return null;
         Optional<StringRes> hasTranslated = translatedApp.getOriginString().stream().filter(stringRes -> originString.getName().equals(stringRes.getName())).findFirst();
-        return hasTranslated.orElse(null);
+        if (hasTranslated.isPresent()) {
+            return hasTranslated.get();
+//            if (isSpecific) return hasTranslated.get();
+//            else {
+//                boolean hasInOther = transDevices.getApps().stream().anyMatch(application -> application.getOriginString().stream().anyMatch(stringRes -> originString.getName().equals(stringRes.getName())));
+//                if (hasInOther) return null;
+//                else return hasTranslated.get();
+//            }
+        } else return null;
     }
 
     public List<StringRes> getOriginString() {

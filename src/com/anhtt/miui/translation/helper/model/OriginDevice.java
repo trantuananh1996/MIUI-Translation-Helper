@@ -54,7 +54,7 @@ public class OriginDevice {
 
                             Application specificedApp = findSpecificedApp(specificOriginDevices, originDevice, app);
                             Application translatedApp = findTranslatedApp(transDevices, app);
-                            app.compare(originDevice, specificedApp, translatedApp);
+                            app.compare(originDevice, specificedApp, translatedApp,transDevices);
                             apps.add(app);
                         }
                     }
