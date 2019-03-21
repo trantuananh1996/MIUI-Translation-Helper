@@ -5,14 +5,14 @@ import com.anhtt.miui.translation.helper.model.WrongArrayRes;
 import com.anhtt.miui.translation.helper.model.WrongStringRes;
 import com.anhtt.miui.translation.helper.model.res.Item;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -30,7 +30,7 @@ import java.util.Objects;
 
 public class Utils {
     public static boolean isNumeric(String str) {
-        String string = str.replaceAll("\\.", "")
+        String string = str.toLowerCase().replaceAll("\\.", "")
                 .replaceAll(":", "")
                 .replaceAll(",", "")
                 .replaceAll("-", "")
@@ -47,7 +47,12 @@ public class Utils {
                 .replaceAll("\\$d", "")
                 .replaceAll("\\+", "")
                 .replaceAll("\\\\", "")
-                .replaceAll("/", "");
+                .replaceAll("/", "")
+                .replaceAll("m", "")
+                .replaceAll("l", "")
+                .replaceAll("z", "")
+                .replaceAll("v", "")
+                .replaceAll("c", "");
         if (string.length() == 0) return true;
         NumberFormat formatter = NumberFormat.getInstance();
         ParsePosition pos = new ParsePosition(0);
@@ -107,7 +112,7 @@ public class Utils {
     private static boolean isIgnoredDevice(String name) {
         List<String> strings = Arrays.asList("XiaomiEUTools.apk", "AutoDialer.apk", "Cit.apk", "cit_nikel.apk", "mediatek-res.apk", "SimContacts.apk"
                 , "PrintRecommendationService.apk", "BSPTelephonyDevTool.apk", "BtTool.apk", "cit.apk", "EngineerMode.apk", "FactoryKitTest.apk", "FactoryMode.apk"
-                , "imssettings.apk", "Mimoji.apk", "NQNfcNci.apk", "Traceur.apk","Cit.apk");
+                , "imssettings.apk", "Mimoji.apk", "NQNfcNci.apk", "Traceur.apk", "Cit.apk");
         return strings.contains(name);
     }
 
@@ -412,5 +417,59 @@ public class Utils {
         outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
         outputXml.close();
         System.out.println("Done");
+    }
+
+    public static void convertUntranslateableFile(String path, String appName) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        DocumentBuilderFactory inFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder inDocBuilder = inFactory.newDocumentBuilder();
+        File valueFolder = new File(path + appName);
+        File file = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
+        Document inDoc = inDocBuilder.parse(file);
+        NodeList inList = inDoc.getElementsByTagName("string");
+
+
+        DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+
+        DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+
+        Document document = documentBuilder.newDocument();
+        Element root = document.createElement("resources");
+        document.appendChild(root);
+
+        for (int i = 0; i < inList.getLength(); i++) {
+            Element element = (Element) inList.item(i);
+            String name = "";
+            NamedNodeMap curAttr = element.getAttributes();
+            for (int j = 0; j < curAttr.getLength(); j++) {
+                Node attr = curAttr.item(j);
+                if (attr.getNodeName().equals("name"))
+                    name = attr.getNodeValue();
+            }
+            Element item = document.createElement("item");
+            root.appendChild(item);
+            item.setAttribute("folder", "all");
+            item.setAttribute("application", appName);
+            item.setAttribute("file", "strings.xml");
+            item.setAttribute("name", name);
+
+        }
+
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource domSource = new DOMSource(document);
+        StringWriter outputXmlStringWriter = new StringWriter();
+        transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+        String outputXmlString = outputXmlStringWriter.toString()
+                .replaceAll("<item", "\n\t<item")
+                .replaceAll("<device", "\n\t\t<device")
+                .replaceAll("<allDevice", "\n<allDevice")
+                .replaceAll("</allDevice", "\n</allDevice")
+                .replaceAll("<resources", "\n<resources")
+                .replaceAll("</resources", "\n</resources");
+
+        FileOutputStream outputXml = new FileOutputStream(path + "\\" + appName + "\\out.xml");
+        outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+        outputXml.close();
     }
 }

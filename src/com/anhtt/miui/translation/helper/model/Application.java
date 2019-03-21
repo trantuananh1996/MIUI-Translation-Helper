@@ -116,7 +116,7 @@ public class Application {
     }
 
     @Nullable
-    public static Application create(String path) {
+    public static Application create(String path, boolean isTranslatedDevice) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
@@ -125,8 +125,8 @@ public class Application {
         if (file.exists()) {
             Application app = new Application(deviceName, file);
             try {
-                app.createStringList();
-                app.createArrayList();
+                app.createStringList(isTranslatedDevice);
+                app.createArrayList(isTranslatedDevice);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -135,7 +135,7 @@ public class Application {
         return null;
     }
 
-    private void createStringList() throws Exception {
+    private void createStringList(boolean isTranslatedDevice) throws Exception {
         originStrings = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -147,12 +147,12 @@ public class Application {
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("string");
         for (int i = 0; i < list.getLength(); i++) {
-            StringRes stringRes = StringRes.create((Element) list.item(i));
+            StringRes stringRes = StringRes.create((Element) list.item(i),isTranslatedDevice);
             if (stringRes != null) originStrings.add(stringRes);
         }
     }
 
-    private void createArrayList() throws Exception {
+    private void createArrayList(boolean isTranslatedDevice) throws Exception {
         originArrays = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -165,7 +165,7 @@ public class Application {
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("string-array");
         for (int i = 0; i < list.getLength(); i++) {
-            ArrayRes stringRes = ArrayRes.create((Element) list.item(i));
+            ArrayRes stringRes = ArrayRes.create((Element) list.item(i),isTranslatedDevice);
             if (stringRes != null) originArrays.add(stringRes);
         }
     }
@@ -272,7 +272,9 @@ public class Application {
     @Nullable
     private StringRes findTranslatedString(StringRes originString, Application translatedApp, TranslatedDevice transDevices, boolean isSpecific) {
         if (translatedApp == null) return null;
-        Optional<StringRes> hasTranslated = translatedApp.getOriginString().stream().filter(stringRes -> originString.getName().equals(stringRes.getName())).findFirst();
+        Optional<StringRes> hasTranslated = translatedApp.getOriginString().stream().filter(stringRes -> {
+            return originString.getName().equals(stringRes.getName());
+        }).findFirst();
         if (hasTranslated.isPresent()) {
             return hasTranslated.get();
 //            if (isSpecific) return hasTranslated.get();

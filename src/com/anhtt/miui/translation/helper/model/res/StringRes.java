@@ -12,7 +12,7 @@ public class StringRes implements Resource<StringRes> {
     private boolean formatted = true;
 
     @Nullable
-    public static StringRes create(Element element) {
+    public static StringRes create(Element element, boolean isTranslatedDevice) {
         String name = "";
         boolean formatted = true;
         String value = element.getTextContent();
@@ -28,9 +28,8 @@ public class StringRes implements Resource<StringRes> {
                 }
         }
 
-
         if (name != null && value != null && name.length() > 0 && value.length() > 0) {
-            if (Utils.isNumeric(value)
+            if ((!isTranslatedDevice && Utils.isNumeric(value))
                     || name.contains("abc_prepend")
                     || name.contains("abc_menu")
                     || name.contains("summary_collapsed_preference_list")
@@ -44,16 +43,17 @@ public class StringRes implements Resource<StringRes> {
                     || value.contains("google-sans")
                     || value.equalsIgnoreCase("OK")
                     || value.equals("999+")
-                    ||value.equals("%d")
-                    ||value.equals("%1$d")
-                    ||value.equals("%2$d")
-                    ||value.equals("%3$d")
-                    ||value.equals("%s")
-                    ||value.equals("%1$s")
-                    ||value.equals("%2$s")
-                    ||value.equals("%3$s")
+                    || value.equals("%d")
+                    || value.equals("%1$d")
+                    || value.equals("%2$d")
+                    || value.equals("%3$d")
+                    || value.equals("%s")
+                    || value.equals("%1$s")
+                    || value.equals("%2$s")
+                    || value.equals("%3$s")
                     || (value.length() >= 15 && !value.contains(" "))
-                    || value.trim().replaceAll("\n", "").replaceAll("\t", "").length() == 0) return null;
+                    || value.trim().replaceAll("\n", "").replaceAll("\t", "").length() == 0
+            ) return null;
 
 
             StringRes stringRes = new StringRes(name, value);

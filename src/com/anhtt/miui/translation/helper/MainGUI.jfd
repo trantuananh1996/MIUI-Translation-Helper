@@ -7,7 +7,7 @@ new FormModel {
 			name: "this"
 			add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
 				"$columnSpecs": "default, labelcompgap, default, labelcompgap, labelcompgap, 22dlu, 85dlu, labelcompgap, default, labelcompgap, default, labelcompgap, default, labelcompgap, 71dlu, labelcompgap, default, labelcompgap, 22dlu"
-				"$rowSpecs": "default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default"
+				"$rowSpecs": "default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default, linegap, default"
 			} ) {
 				name: "panel1"
 				add( new FormComponent( "javax.swing.JLabel" ) {
@@ -212,11 +212,19 @@ new FormModel {
 					"gridY": 27
 					"gridWidth": 3
 				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnViewUnTranslatedString"
+					"text": "Xem string chưa dịch"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnViewUnTranslatedStringMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 1
+					"gridY": 29
+				} )
 				add( new FormComponent( "javax.swing.JLabel" ) {
 					name: "tvLog"
 					"text": "Log"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridY": 29
+					"gridY": 31
 					"gridWidth": 13
 				} )
 			}, new FormLayoutConstraints( class java.lang.String ) {

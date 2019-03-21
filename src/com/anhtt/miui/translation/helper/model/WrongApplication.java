@@ -13,7 +13,7 @@ public class WrongApplication {
     List<WrongStringRes> wrongTranslatedStrings = new ArrayList<>();//String bị dịch sai
 
     List<WrongArrayRes> wrongTranslatedOriginArrays = new ArrayList<>();//String gốc bị dịch sai
-    List<WrongArrayRes> wrongTranslatedArrays= new ArrayList<>();//String bị dịch sai
+    List<WrongArrayRes> wrongTranslatedArrays = new ArrayList<>();//String bị dịch sai
 
     public WrongApplication(String name) {
         this.name = name;
@@ -43,7 +43,7 @@ public class WrongApplication {
         Optional<WrongStringRes> hasString = wrongTranslatedOriginStrings.stream().filter(stringRes1 -> stringRes1.getName().equals(origin.getName()) && stringRes1.getValue().equals(origin.getValue())).findFirst();
         WrongStringRes wrongStringRes;
         if (!hasString.isPresent()) {
-            wrongStringRes = new WrongStringRes(origin.getName(), origin.getValue(),origin.isFormatted());
+            wrongStringRes = new WrongStringRes(origin.getName(), origin.getValue(), origin.isFormatted());
             wrongStringRes.addDevice(originDevice.getName());
             wrongTranslatedOriginStrings.add(wrongStringRes);
         } else {
@@ -61,7 +61,7 @@ public class WrongApplication {
         Optional<WrongArrayRes> hasString = wrongTranslatedOriginArrays.stream().filter(stringRes1 -> stringRes1.equalsExact(origin)).findFirst();
         WrongArrayRes wrongStringRes;
         if (!hasString.isPresent()) {
-            wrongStringRes = new WrongArrayRes(origin.getName(),origin.getArrayType(), origin.getItems());
+            wrongStringRes = new WrongArrayRes(origin.getName(), origin.getArrayType(), origin.getItems());
             wrongStringRes.addDevice(originDevice.getName());
             wrongTranslatedOriginArrays.add(wrongStringRes);
         } else {
@@ -73,6 +73,11 @@ public class WrongApplication {
             wrongStringRes.getDevices().add("all");
         }
 
+    }
+
+    @Override
+    public String toString() {
+        return name;
     }
 }
 

@@ -34,7 +34,7 @@ public class ArrayRes implements Resource<ArrayRes> {
     }
 
     @Nullable
-    public static ArrayRes create(Element element) {
+    public static ArrayRes create(Element element, boolean isTranslatedDevice) {
         String name = "";
         String arrayType = "";
 
@@ -52,7 +52,10 @@ public class ArrayRes implements Resource<ArrayRes> {
                 || name.contains("_locale")
                 || name.contains("region_global")
                 || name.contains("device_")
+                || name.endsWith("_devices")
                 || name.contains("_region")
+                || name.startsWith("prefValues")
+                || name.startsWith("pref_")
         ) return null;
 
 
@@ -66,7 +69,7 @@ public class ArrayRes implements Resource<ArrayRes> {
         //Bỏ qua nếu tất cả là số hoặc string res; tất cả là package name dạng com.abc
         if (items.stream().allMatch(item -> item.getValue().contains("string/")
                 || item.getValue().contains("android:string/")
-                || isNumeric(item.getValue())
+                || (!isTranslatedDevice&&isNumeric(item.getValue()))
                 || item.getValue().contains("drawable/")
                 || item.getValue().contains("android:drawable/"))
 

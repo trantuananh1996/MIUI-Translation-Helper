@@ -10,12 +10,19 @@ import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
+import javafx.collections.FXCollections;
+import javafx.scene.Scene;
+import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.layout.StackPane;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -29,6 +36,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * @author unknown
@@ -181,7 +189,7 @@ public class MainGUI extends JFrame {
 
             File transDevicesFolder = new File(translationFolder.getAbsolutePath() + "\\main");
             if (!transDevicesFolder.exists()) return null;
-            transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath());
+            transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(),true);
 
 
             File specificDevicesFolder = new File(translationFolder.getAbsolutePath() + "\\device");
@@ -217,7 +225,7 @@ public class MainGUI extends JFrame {
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
             if (cbFindUntranslated.isSelected()) {
                 Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
-                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
+                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArray", untranslatedApplications);
 
             }
             return null;
@@ -420,7 +428,7 @@ public class MainGUI extends JFrame {
 
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
-        TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath());
+        TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(),false);
         if (transDevices == null) return;
         List<String> duplicate = new ArrayList<>();
         transDevices.getApps().forEach(application -> {
@@ -431,6 +439,34 @@ public class MainGUI extends JFrame {
             });
         });
         System.out.println(duplicate);
+    }
+
+    private void btnViewUnTranslatedStringMouseClicked(MouseEvent e) {
+        JFrame f = new JFrame("Test");
+        List<WrongApplication> applications = untranslatedApplications.stream().filter(wrongApplication -> wrongApplication.getWrongTranslatedOriginStrings().size() > 0)
+                .collect(Collectors.toList());
+        JList<WrongApplication> list = new JList(applications.toArray());
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evt) {
+                JList list = (JList) evt.getSource();
+                if (evt.getClickCount() == 2) {
+                    int index = list.locationToIndex(evt.getPoint());
+                    System.out.println("Converting " + applications.get(index).getName());
+                    try {
+                        Utils.convertUntranslateableFile(edtFilteredFolder.getText() + "\\UnTranslated\\", applications.get(index).getName());
+                    } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+        f.add(list);
+        f.pack();
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
     }
 
 
@@ -464,6 +500,7 @@ public class MainGUI extends JFrame {
         btnStop = new JButton();
         btnMoveToIgnored = new JButton();
         btnCheckDuplicate = new JButton();
+        btnViewUnTranslatedString = new JButton();
         tvLog = new JLabel();
 
         //======== this ========
@@ -481,7 +518,7 @@ public class MainGUI extends JFrame {
         {
             panel1.setLayout(new FormLayout(
                 "2*(default, $lcgap), $lcgap, 22dlu, 85dlu, 3*($lcgap, default), $lcgap, 71dlu, $lcgap, default, $lcgap, 22dlu",
-                "14*(default, $lgap), default"));
+                "15*(default, $lgap), default"));
 
             //---- label2 ----
             label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
@@ -631,9 +668,19 @@ public class MainGUI extends JFrame {
             });
             panel1.add(btnCheckDuplicate, CC.xywh(15, 27, 3, 1));
 
+            //---- btnViewUnTranslatedString ----
+            btnViewUnTranslatedString.setText("Xem string ch\u01b0a d\u1ecbch");
+            btnViewUnTranslatedString.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnViewUnTranslatedStringMouseClicked(e);
+                }
+            });
+            panel1.add(btnViewUnTranslatedString, CC.xy(1, 29));
+
             //---- tvLog ----
             tvLog.setText("Log");
-            panel1.add(tvLog, CC.xywh(1, 29, 13, 1));
+            panel1.add(tvLog, CC.xywh(1, 31, 13, 1));
         }
         add(panel1, BorderLayout.CENTER);
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
@@ -676,6 +723,7 @@ public class MainGUI extends JFrame {
     private JButton btnStop;
     private JButton btnMoveToIgnored;
     private JButton btnCheckDuplicate;
+    private JButton btnViewUnTranslatedString;
     private JLabel tvLog;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }

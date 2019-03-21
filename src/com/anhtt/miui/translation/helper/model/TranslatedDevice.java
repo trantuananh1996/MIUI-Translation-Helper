@@ -32,7 +32,7 @@ public class TranslatedDevice {
     }
 
     @Nullable
-    public static TranslatedDevice create(String path) {
+    public static TranslatedDevice create(String path,boolean isTranslatedDevice) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
@@ -45,7 +45,7 @@ public class TranslatedDevice {
                 List<Application> apps = new ArrayList<>();
                 for (File appFolder : child) {
                     if (appFolder.exists() && appFolder.isDirectory()) {
-                        Application app = Application.create(appFolder.getAbsolutePath());
+                        Application app = Application.create(appFolder.getAbsolutePath(),isTranslatedDevice);
                         if (app != null) apps.add(app);
                     }
                 }
