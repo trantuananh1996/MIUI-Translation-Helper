@@ -138,6 +138,7 @@ public class Application {
     private void createStringList(boolean isTranslatedDevice) throws Exception {
         originStrings = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setIgnoringElementContentWhitespace(true);
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
         if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi");
@@ -147,7 +148,7 @@ public class Application {
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("string");
         for (int i = 0; i < list.getLength(); i++) {
-            StringRes stringRes = StringRes.create((Element) list.item(i),isTranslatedDevice);
+            StringRes stringRes = StringRes.create( list.item(i),isTranslatedDevice);
             if (stringRes != null) originStrings.add(stringRes);
         }
     }
