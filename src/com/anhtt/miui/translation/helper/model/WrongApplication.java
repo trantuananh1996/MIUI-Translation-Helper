@@ -1,6 +1,7 @@
 package com.anhtt.miui.translation.helper.model;
 
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
+import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 
 import java.util.ArrayList;
@@ -15,8 +16,18 @@ public class WrongApplication {
     List<WrongArrayRes> wrongTranslatedOriginArrays = new ArrayList<>();//String gốc bị dịch sai
     List<WrongArrayRes> wrongTranslatedArrays = new ArrayList<>();//String bị dịch sai
 
+    List<WrongPluralRes> wrongTranslatedOriginPlurals = new ArrayList<>();//String gốc bị dịch sai
+    List<WrongPluralRes> wrongTranslatedPlurals = new ArrayList<>();//String bị dịch sai
     public WrongApplication(String name) {
         this.name = name;
+    }
+
+    public List<WrongPluralRes> getWrongTranslatedOriginPlurals() {
+        return wrongTranslatedOriginPlurals;
+    }
+
+    public List<WrongPluralRes> getWrongTranslatedPlurals() {
+        return wrongTranslatedPlurals;
     }
 
     public String getName() {
@@ -74,7 +85,23 @@ public class WrongApplication {
         }
 
     }
+    public void addOrigin(int size, OriginDevice originDevice, PluralRes origin) {
+        Optional<WrongPluralRes> hasString = wrongTranslatedOriginPlurals.stream().filter(stringRes1 -> stringRes1.equalsExact(origin)).findFirst();
+        WrongPluralRes wrongStringRes;
+        if (!hasString.isPresent()) {
+            wrongStringRes = new WrongPluralRes(origin.getName(), origin.getArrayType(), origin.getItems());
+            wrongStringRes.addDevice(originDevice.getName());
+            wrongTranslatedOriginPlurals.add(wrongStringRes);
+        } else {
+            wrongStringRes = hasString.get();
+            wrongStringRes.addDevice(originDevice.getName());
+        }
+        if (wrongStringRes.getDevices().size() == size) {
+            wrongStringRes.getDevices().clear();
+            wrongStringRes.getDevices().add("all");
+        }
 
+    }
     @Override
     public String toString() {
         return name;

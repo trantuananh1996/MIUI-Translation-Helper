@@ -151,7 +151,7 @@ new FormModel {
 					"gridY": 19
 				} )
 				add( new FormComponent( "javax.swing.JCheckBox" ) {
-					name: "checkBox2"
+					name: "cbFindInAllApp"
 					"text": "Chỉ tìm text chưa có ở bất kỳ app nào (lâu hơn rất nhiều)"
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
 					"gridX": 7

@@ -6,6 +6,7 @@ package com.anhtt.miui.translation.helper;
 
 import com.anhtt.miui.translation.helper.model.*;
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
+import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
@@ -60,6 +61,7 @@ public class MainGUI extends JFrame {
         setSize(500, 500);
         setLocationRelativeTo(getOwner());
         tvLogStatic = tvLog;
+        cbFindInAllApp.setVisible(false);
         //TODO: For fast testing
         edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv10-XML-Compare");
         edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-10-XML-Vietnamese\\Vietnamese");
@@ -209,11 +211,13 @@ public class MainGUI extends JFrame {
                     if (cbFindFormatedString.isSelected()) {
                         groupString(application.getName(), application.getWrongTranslatedOriginStrings(), originDevice, wrongApplications);
                         groupArray(application.getName(), application.getWrongTranslatedOriginArrays(), originDevice, wrongApplications);
+                        groupPlural(application.getName(), application.getWrongTranslatedOriginPlurals(), originDevice, wrongApplications);
                     }
 
                     if (cbFindUntranslated.isSelected()) {
                         groupString(application.getName(), application.getUnTranslatedStrings(), originDevice, untranslatedApplications);
                         groupArray(application.getName(), application.getUnTranslatedArrays(), originDevice, untranslatedApplications);
+                        groupPlural(application.getName(), application.getWrongTranslatedOriginPlurals(), originDevice, wrongApplications);
                     }
                     if (cbFindCanRemove.isSelected())
                         Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslatedStrings());
@@ -226,6 +230,7 @@ public class MainGUI extends JFrame {
             if (cbFindUntranslated.isSelected()) {
                 Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
                 Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArray", untranslatedApplications);
+                Utils.writeUnTranslatedPluralToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedPlural", untranslatedApplications);
 
             }
             return null;
@@ -268,7 +273,18 @@ public class MainGUI extends JFrame {
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
-
+    private void groupPlural(String appName, List<PluralRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        for (int i = 0; i < stringToGroups.size(); i++) {
+            PluralRes origin = stringToGroups.get(i);
+            wrongApplication.addOrigin(originDevices.size(), originDevice, origin);
+        }
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
     private List<UnTranslateable> createAutoIgnoredList() throws ParserConfigurationException, IOException, SAXException {
         List<UnTranslateable> unTranslateables = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -493,7 +509,7 @@ public class MainGUI extends JFrame {
         cbArray = new JCheckBox();
         cbFindUntranslated = new JCheckBox();
         cbPlural = new JCheckBox();
-        checkBox2 = new JCheckBox();
+        cbFindInAllApp = new JCheckBox();
         cbFindCanRemove = new JCheckBox();
         checkBox1 = new JCheckBox();
         btnStart = new JButton();
@@ -612,9 +628,9 @@ public class MainGUI extends JFrame {
             cbPlural.setText("plural");
             panel1.add(cbPlural, CC.xy(1, 19));
 
-            //---- checkBox2 ----
-            checkBox2.setText("Ch\u1ec9 t\u00ecm text ch\u01b0a c\u00f3 \u1edf b\u1ea5t k\u1ef3 app n\u00e0o (l\u00e2u h\u01a1n r\u1ea5t nhi\u1ec1u)");
-            panel1.add(checkBox2, CC.xywh(7, 19, 13, 1));
+            //---- cbFindInAllApp ----
+            cbFindInAllApp.setText("Ch\u1ec9 t\u00ecm text ch\u01b0a c\u00f3 \u1edf b\u1ea5t k\u1ef3 app n\u00e0o (l\u00e2u h\u01a1n r\u1ea5t nhi\u1ec1u)");
+            panel1.add(cbFindInAllApp, CC.xywh(7, 19, 13, 1));
 
             //---- cbFindCanRemove ----
             cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
@@ -716,7 +732,7 @@ public class MainGUI extends JFrame {
     private JCheckBox cbArray;
     private JCheckBox cbFindUntranslated;
     private JCheckBox cbPlural;
-    private JCheckBox checkBox2;
+    private JCheckBox cbFindInAllApp;
     private JCheckBox cbFindCanRemove;
     private JCheckBox checkBox1;
     private JButton btnStart;

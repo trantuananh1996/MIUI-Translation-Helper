@@ -7,12 +7,13 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.bind.JAXBContext;
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.anhtt.miui.translation.helper.Utils.isNumeric;
 
-public class ArrayRes implements Resource<ArrayRes> {
+public class PluralRes implements Resource<PluralRes> {
     private String name;
     private String arrayType;
     private List<Item> items = new ArrayList<>();
@@ -25,7 +26,7 @@ public class ArrayRes implements Resource<ArrayRes> {
         return items;
     }
 
-    public ArrayRes(String name, String arrayType) {
+    public PluralRes(String name, String arrayType) {
         this.name = name;
         this.arrayType = arrayType;
     }
@@ -35,7 +36,7 @@ public class ArrayRes implements Resource<ArrayRes> {
     }
 
     @Nullable
-    public static ArrayRes create(Element element, boolean isApplyFilter) {
+    public static PluralRes create(Element element, boolean isApplyFilter) {
         String name = "";
         String arrayType = "";
 
@@ -46,7 +47,6 @@ public class ArrayRes implements Resource<ArrayRes> {
             if (attr.getNodeName().equals("name"))
                 name = attr.getNodeValue();
         }
-
         if (isApplyFilter) if (name == null
                 || name.length() == 0
                 || name.contains("alphabet_table")
@@ -64,8 +64,16 @@ public class ArrayRes implements Resource<ArrayRes> {
         NodeList list = element.getChildNodes();
         for (int i = 0; i < list.getLength(); i++) {
             Node child = list.item(i);
-            if (child.getNodeName().equals("item"))
-                items.add(new Item(Utils.nodeToString(child)));
+            if (child.getNodeName().equals("item")) {
+                String quantity = "";
+                NamedNodeMap attrs = element.getAttributes();
+                for (int j = 0; j < attrs.getLength(); j++) {
+                    Node attr = attrs.item(j);
+                    if (attr.getNodeName().equals("quantity"))
+                        name = attr.getNodeValue();
+                }
+                items.add(new Item(Utils.nodeToString(child),quantity));
+            }
         }
         //Bỏ qua nếu tất cả là số hoặc string res; tất cả là package name dạng com.abc
         if (isApplyFilter) if (items.stream().allMatch(item -> item.getValue().contains("string/")
@@ -82,7 +90,7 @@ public class ArrayRes implements Resource<ArrayRes> {
 
 
         if (arrayType != null && arrayType.length() > 0) {
-            ArrayRes arrayRes = new ArrayRes(name, arrayType);
+            PluralRes arrayRes = new PluralRes(name, arrayType);
             arrayRes.setItems(items);
             return arrayRes;
         }
@@ -91,12 +99,12 @@ public class ArrayRes implements Resource<ArrayRes> {
     }
 
 
-    public ArrayRes(String name) {
+    public PluralRes(String name) {
         this.name = name;
     }
 
     @Override
-    public boolean isWrongFormat(ArrayRes other) {
+    public boolean isWrongFormat(PluralRes other) {
         return false;
     }
 
@@ -106,8 +114,8 @@ public class ArrayRes implements Resource<ArrayRes> {
 
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof ArrayRes) {
-            ArrayRes other = (ArrayRes) obj;
+        if (obj instanceof PluralRes) {
+            PluralRes other = (PluralRes) obj;
             if (!name.equals(other.name)) return false;
             if (items.size() != other.items.size()) return false;
             for (int i = 0; i < items.size(); i++) {
@@ -119,7 +127,7 @@ public class ArrayRes implements Resource<ArrayRes> {
         return true;
     }
 
-    public boolean equalsExact(ArrayRes origin) {
+    public boolean equalsExact(PluralRes origin) {
         if (!name.equals(origin.getName())) return false;
         if (items == null && origin.getItems() != null) return false;
         if (origin.getItems() == null && items != null) return false;

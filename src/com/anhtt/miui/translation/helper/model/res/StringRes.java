@@ -6,47 +6,40 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+import java.io.StringReader;
 import java.io.StringWriter;
+
+import static com.anhtt.miui.translation.helper.Utils.nodeToString;
 
 public class StringRes implements Resource<StringRes> {
     private String name;
     private String value;
     private boolean formatted = true;
 
-    private static String nodeToString(Node node) {
-        if(node.getChildNodes().getLength()==1) return node.getTextContent();
+    private static String toString(Node node) {
         StringWriter sw = new StringWriter();
         try {
-            return nodeListToString(node.getChildNodes());
+            Transformer t = TransformerFactory.newInstance().newTransformer();
+            t.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+            t.setOutputProperty(OutputKeys.INDENT, "yes");
+            t.transform(new DOMSource(node), new StreamResult(sw));
         } catch (TransformerException te) {
             System.out.println("nodeToString Transformer Exception");
         }
         return sw.toString();
     }
 
-    private static String nodeListToString(NodeList nodes) throws TransformerException {
-        DOMSource source = new DOMSource();
-        StringWriter writer = new StringWriter();
-        StreamResult result = new StreamResult(writer);
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
-        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
-
-        for (int i = 0; i < nodes.getLength(); ++i) {
-            source.setNode(nodes.item(i));
-            transformer.transform(source, result);
-        }
-
-        return writer.toString();
-    }
-
     @Nullable
-    public static StringRes create(Node element, boolean isTranslatedDevice) {
+    public static StringRes create(Node element, boolean isApplyFilter) {
         String name = "";
         boolean formatted = true;
         String value = nodeToString(element);
@@ -64,7 +57,7 @@ public class StringRes implements Resource<StringRes> {
         }
 
         if (name != null && value != null && name.length() > 0 && value.length() > 0) {
-            if ((!isTranslatedDevice && Utils.isNumeric(value))
+            if (isApplyFilter) if (Utils.isNumeric(value)
                     || name.contains("abc_prepend")
                     || name.contains("abc_menu")
                     || name.contains("summary_collapsed_preference_list")

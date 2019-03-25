@@ -48,7 +48,7 @@ public class OriginDevice {
                 List<Application> apps = new ArrayList<>();
                 for (File appFolder : child) {
                     if (appFolder.exists() && appFolder.isDirectory()) {
-                        Application app = Application.create(appFolder.getAbsolutePath(), false);
+                        Application app = Application.create(appFolder.getAbsolutePath(), true);
                         if (app != null) {
                            swingWorker.sendLog("Đang xử lý " + deviceName + ": " + app.getName());
 

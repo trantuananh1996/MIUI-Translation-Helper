@@ -2,6 +2,7 @@ package com.anhtt.miui.translation.helper;
 
 import com.anhtt.miui.translation.helper.model.WrongApplication;
 import com.anhtt.miui.translation.helper.model.WrongArrayRes;
+import com.anhtt.miui.translation.helper.model.WrongPluralRes;
 import com.anhtt.miui.translation.helper.model.WrongStringRes;
 import com.anhtt.miui.translation.helper.model.res.Item;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
@@ -11,10 +12,7 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
@@ -29,6 +27,32 @@ import java.util.List;
 import java.util.Objects;
 
 public class Utils {
+    public static String nodeToString(Node node) {
+        if (node.getChildNodes().getLength() == 1) return node.getTextContent();
+        StringWriter sw = new StringWriter();
+        try {
+            return nodeListToString(node.getChildNodes());
+        } catch (TransformerException te) {
+            System.out.println("nodeToString Transformer Exception");
+        }
+        return sw.toString();
+    }
+
+    public static String nodeListToString(NodeList nodes) throws TransformerException {
+        DOMSource source = new DOMSource();
+        StringWriter writer = new StringWriter();
+        StreamResult result = new StreamResult(writer);
+        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
+
+        for (int i = 0; i < nodes.getLength(); ++i) {
+            source.setNode(nodes.item(i));
+            transformer.transform(source, result);
+        }
+
+        return writer.toString();
+    }
+
     public static boolean isNumeric(String str) {
         String string = str.toLowerCase().replaceAll("\\.", "")
                 .replaceAll(":", "")
@@ -359,6 +383,66 @@ public class Utils {
             pce.printStackTrace();
         }
     }
+
+
+    public static void writeUnTranslatedPluralToFile(String absolutePath, List<WrongApplication> wrongApplications) {
+        for (WrongApplication wrongApplication : wrongApplications) {
+            writeUnTranslatedPluralToFile(absolutePath, wrongApplication);
+        }
+    }
+
+    public static void writeUnTranslatedPluralToFile(String path, WrongApplication wrongApplication) {
+        if (wrongApplication.getWrongTranslatedOriginPlurals().size() == 0) return;
+        try {
+            File dir = new File(path + "\\" + wrongApplication.getName());
+            if (!dir.exists()) dir.mkdirs();
+
+            DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+
+            DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+
+            Document document = documentBuilder.newDocument();
+            Element root = document.createElement("resources");
+            document.appendChild(root);
+
+            for (WrongPluralRes string : wrongApplication.getWrongTranslatedOriginPlurals()) {
+                Element stringNode = document.createElement(string.getArrayType());
+                root.appendChild(stringNode);
+                stringNode.setAttribute("name", string.getName());
+                if (!string.isFormatted()) stringNode.setAttribute("formatted", string.isFormatted() + "");
+                for (Item item : string.getItems()) {
+                    Element itemNode = document.createElement("item");
+                    stringNode.appendChild(itemNode);
+                    itemNode.setTextContent(item.getValue());
+                    if (item.getQuantity() != null && item.getQuantity().length() > 0)
+                        itemNode.setAttribute("quantity", item.getQuantity());
+                }
+            }
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            DOMSource domSource = new DOMSource(document);
+            StringWriter outputXmlStringWriter = new StringWriter();
+            transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+            String outputXmlString = outputXmlStringWriter.toString()
+                    .replaceAll("<string", "\n\t<string")
+                    .replaceAll("</string", "\n\t</string")
+                    .replaceAll("<array", "\n\t<array")
+                    .replaceAll("</array", "\n\t</array")
+                    .replaceAll("<item", "\n\t\t<item")
+                    .replaceAll("<device", "\n\t\t<device")
+                    .replaceAll("<allDevice", "\n<allDevice")
+                    .replaceAll("</allDevice", "\n</allDevice")
+                    .replaceAll("<resources", "\n<resources")
+                    .replaceAll("</resources", "\n</resources");
+
+            FileOutputStream outputXml = new FileOutputStream(path + "\\" + wrongApplication.getName() + "\\plurals.xml");
+            outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+            outputXml.close();
+        } catch (ParserConfigurationException | TransformerException | IOException pce) {
+            pce.printStackTrace();
+        }
+    }
+
 
     public static void addIgnoredFile(String path, String filteredPath, List<WrongApplication> untranslatedApplications) throws ParserConfigurationException, IOException, SAXException, TransformerException {
         File sourceFile = new File(path + "\\MIUI10\\MIUI10_untranslateable.xml");
