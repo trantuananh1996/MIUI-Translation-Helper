@@ -109,6 +109,10 @@ public class StringRes implements Resource<StringRes> {
         return name;
     }
 
+    public String getGroupValue() {
+        return name + value;
+    }
+
     public String getValue() {
         return value;
     }

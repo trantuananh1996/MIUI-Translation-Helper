@@ -49,6 +49,7 @@ public class Application {
     private List<PluralRes> mightNotTranslatedPlurals = new ArrayList<>();//Plural giống nhau giữa gốc và dịch, có thể bỏ
     private List<PluralRes> canNotTranslatePlurals = new ArrayList<>();//Plural không thể dịch
     private List<PluralRes> originEqualTranslatedPlurals = new ArrayList<>();//Dịch giống gốc
+    private List<StringRes> duplicateString;
 
     private List<PluralRes> getOriginPlurals() {
         return originPlurals;
@@ -426,5 +427,13 @@ public class Application {
 
     public List<ArrayRes> getOriginArrays() {
         return originArrays;
+    }
+
+    public void setDuplicateString(List<StringRes> duplicateString) {
+        this.duplicateString = duplicateString;
+    }
+
+    public List<StringRes> getDuplicateString() {
+        return duplicateString;
     }
 }

@@ -453,19 +453,29 @@ public class MainGUI extends JFrame {
 
     private void btnCheckDuplicateMouseClicked(MouseEvent e) {
 
+        tvLog.append("\nKiểm tra trùng lặp");
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
         TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
         if (transDevices == null) return;
-        List<String> duplicate = new ArrayList<>();
         transDevices.getApps().forEach(application -> {
-            System.out.println(application.getName());
-            application.getOriginString().forEach(stringRes -> {
-                long count = application.getOriginString().stream().filter(other -> other.getName().equals(stringRes.getName())).count();
-                if (count > 1 && !duplicate.contains(stringRes.getName())) duplicate.add(stringRes.getName());
-            });
+            tvLog.append("\n" + application.getName());
+            application.setDuplicateString(getDuplicates(application.getOriginString()));
+            if (application.getDuplicateString() == null || application.getDuplicateString().size() == 0) {
+                tvLog.append("\nKhông có trùng lặp");
+            } else tvLog.append("\n Có trùng lặp");
         });
-        System.out.println(duplicate);
+    }
+
+    public static List<StringRes> getDuplicates(final List<StringRes> personList) {
+        return getDuplicatesMap(personList).values().stream()
+                .filter(duplicates -> duplicates.size() > 1)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+    }
+
+    private static Map<String, List<StringRes>> getDuplicatesMap(List<StringRes> personList) {
+        return personList.stream().collect(Collectors.groupingBy(StringRes::getGroupValue));
     }
 
     private void btnViewUnTranslatedStringMouseClicked(MouseEvent e) {
@@ -574,24 +584,29 @@ public class MainGUI extends JFrame {
 
         // JFormDesigner evaluation mark
         setBorder(new javax.swing.border.CompoundBorder(
-            new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                java.awt.Color.red), getBorder())); addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
+                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
+                        "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
+                        javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
+                        java.awt.Color.red), getBorder()));
+        addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent e) {
+                if ("border".equals(e.getPropertyName())) throw new RuntimeException();
+            }
+        });
 
         setLayout(new BorderLayout());
 
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                "5dlu, $lcgap, 402dlu, $lcgap",
-                "2*(default, $lgap), default"));
+                    "5dlu, $lcgap, 402dlu, $lcgap",
+                    "2*(default, $lgap), default"));
 
             //======== panel3 ========
             {
                 panel3.setLayout(new FormLayout(
-                    "default, $lcgap, 275dlu, $lcgap, 26dlu",
-                    "3*(default, $lgap), default"));
+                        "default, $lcgap, 275dlu, $lcgap, 26dlu",
+                        "3*(default, $lgap), default"));
 
                 //---- label2 ----
                 label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
@@ -658,17 +673,17 @@ public class MainGUI extends JFrame {
             //======== panel4 ========
             {
                 panel4.setLayout(new FormLayout(
-                    "8*(default, $lcgap), default",
-                    "default"));
+                        "8*(default, $lcgap), default",
+                        "default"));
 
                 //======== panel7 ========
                 {
                     panel7.setBorder(new CompoundBorder(
-                        new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
-                        Borders.DLU2));
+                            new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
+                            Borders.DLU2));
                     panel7.setLayout(new FormLayout(
-                        "42dlu",
-                        "2*(default, $lgap), default"));
+                            "42dlu",
+                            "2*(default, $lgap), default"));
 
                     //---- cbString ----
                     cbString.setText("string");
@@ -691,8 +706,8 @@ public class MainGUI extends JFrame {
                 {
                     panel8.setBorder(new TitledBorder("T\u00f9y ch\u1ecdn"));
                     panel8.setLayout(new FormLayout(
-                        "default",
-                        "4*(default, $lgap), default"));
+                            "default",
+                            "4*(default, $lgap), default"));
 
                     //---- cbFindFormatedString ----
                     cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
@@ -729,14 +744,14 @@ public class MainGUI extends JFrame {
                 {
                     panel5.setBorder(new TitledBorder("H\u00e0nh \u0111\u1ed9ng"));
                     panel5.setLayout(new FormLayout(
-                        "88dlu, $lcgap, 84dlu",
-                        "2*(default, $lgap), default"));
+                            "88dlu, $lcgap, 84dlu",
+                            "2*(default, $lgap), default"));
 
                     //======== panel2 ========
                     {
                         panel2.setLayout(new FormLayout(
-                            "46dlu, $lcgap, 41dlu",
-                            "default"));
+                                "46dlu, $lcgap, 41dlu",
+                                "default"));
 
                         //---- btnStart ----
                         btnStart.setText("B\u1eaft \u0111\u1ea7u");
@@ -810,8 +825,8 @@ public class MainGUI extends JFrame {
             //======== panel6 ========
             {
                 panel6.setLayout(new FormLayout(
-                    "362dlu, 2*($lcgap, default)",
-                    "default, 97dlu"));
+                        "362dlu, 2*($lcgap, default)",
+                        "default, 97dlu"));
 
                 //---- label7 ----
                 label7.setText("Log");
