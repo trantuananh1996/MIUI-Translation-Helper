@@ -182,8 +182,7 @@ new FormModel {
 					"text": "Bắt đầu"
 					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnStartMouseClicked", true ) )
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 15
-					"gridY": 23
+					"gridY": 25
 				} )
 				add( new FormComponent( "javax.swing.JButton" ) {
 					name: "btnStop"
@@ -191,34 +190,40 @@ new FormModel {
 					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "button1MouseClicked", true ) )
 					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnStopMouseClicked", true ) )
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 17
-					"gridY": 23
-				} )
-				add( new FormComponent( "javax.swing.JButton" ) {
-					name: "btnMoveToIgnored"
-					"text": "Chuyển string chưa dịch vào ignore"
-					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnMoveToIgnoredMouseClicked", true ) )
-				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 11
+					"gridX": 3
 					"gridY": 25
-					"gridWidth": 9
-				} )
-				add( new FormComponent( "javax.swing.JButton" ) {
-					name: "btnCheckDuplicate"
-					"text": "Kiểm tra trùng lặp"
-					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnCheckDuplicateMouseClicked", true ) )
-				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 15
-					"gridY": 27
-					"gridWidth": 3
 				} )
 				add( new FormComponent( "javax.swing.JButton" ) {
 					name: "btnViewUnTranslatedString"
 					"text": "Xem string chưa dịch"
 					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnViewUnTranslatedStringMouseClicked", true ) )
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-					"gridX": 1
+					"gridY": 27
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnCheckDuplicate"
+					"text": "Kiểm tra trùng lặp"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnCheckDuplicateMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 3
+					"gridY": 27
+					"gridWidth": 5
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnViewUntranslatedArray"
+					"text": "Xem array chưa dịch"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnViewUntranslatedArrayMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
 					"gridY": 29
+				} )
+				add( new FormComponent( "javax.swing.JButton" ) {
+					name: "btnMoveToIgnored"
+					"text": "Chuyển string chưa dịch vào ignore"
+					addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnMoveToIgnoredMouseClicked", true ) )
+				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+					"gridX": 3
+					"gridY": 29
+					"gridWidth": 9
 				} )
 				add( new FormComponent( "javax.swing.JLabel" ) {
 					name: "tvLog"

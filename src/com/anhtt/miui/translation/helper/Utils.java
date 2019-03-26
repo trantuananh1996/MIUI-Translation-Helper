@@ -556,4 +556,61 @@ public class Utils {
         outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
         outputXml.close();
     }
+
+    public static void convertUntranslateableArrayFile(String path, String appName) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        DocumentBuilderFactory inFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder inDocBuilder = inFactory.newDocumentBuilder();
+        File valueFolder = new File(path + appName);
+        File file = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
+        Document inDoc = inDocBuilder.parse(file);
+        NodeList inList = inDoc.getElementsByTagName("string-array");
+
+
+        DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+
+        DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+
+        Document document = documentBuilder.newDocument();
+        Element root = document.createElement("resources");
+        document.appendChild(root);
+
+        for (int i = 0; i < inList.getLength(); i++) {
+            Element element = (Element) inList.item(i);
+            String name = "";
+            NamedNodeMap curAttr = element.getAttributes();
+            for (int j = 0; j < curAttr.getLength(); j++) {
+                Node attr = curAttr.item(j);
+                if (attr.getNodeName().equals("name"))
+                    name = attr.getNodeValue();
+            }
+            Element item = document.createElement("item");
+            root.appendChild(item);
+            item.setAttribute("folder", "all");
+            item.setAttribute("application", appName);
+            item.setAttribute("file", "arrays.xml");
+            item.setAttribute("name", name);
+
+        }
+
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource domSource = new DOMSource(document);
+        StringWriter outputXmlStringWriter = new StringWriter();
+        transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+        String outputXmlString = outputXmlStringWriter.toString()
+                .replaceAll("<item", "\n\t<item")
+                .replaceAll("<device", "\n\t\t<device")
+                .replaceAll("<allDevice", "\n<allDevice")
+                .replaceAll("</allDevice", "\n</allDevice")
+                .replaceAll("<resources", "\n<resources")
+                .replaceAll("</resources", "\n</resources");
+
+        FileOutputStream outputXml = new FileOutputStream(path + "\\" + appName + "\\out.xml");
+        outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+        outputXml.close();
+    }
+
+
+
 }

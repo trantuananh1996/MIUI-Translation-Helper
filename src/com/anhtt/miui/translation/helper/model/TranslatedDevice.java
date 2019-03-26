@@ -22,7 +22,7 @@ public class TranslatedDevice {
         try {
             File file = new File(path);
             name = file.getName();
-            if (!name.contains("Diff")&&!name.contains("extras") && !name.contains("stable") && !name.contains(".") && !file.isHidden())
+            if (!name.contains("Diff") && !name.contains("extras") && !name.contains("stable") && !name.contains(".") && !file.isHidden())
                 return name;
         } catch (Exception e) {
             e.printStackTrace();
@@ -32,7 +32,7 @@ public class TranslatedDevice {
     }
 
     @Nullable
-    public static TranslatedDevice create(String path,boolean isTranslatedDevice) {
+    public static TranslatedDevice create(String path, boolean isApplyFilter) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
@@ -45,7 +45,7 @@ public class TranslatedDevice {
                 List<Application> apps = new ArrayList<>();
                 for (File appFolder : child) {
                     if (appFolder.exists() && appFolder.isDirectory()) {
-                        Application app = Application.create(appFolder.getAbsolutePath(),isTranslatedDevice);
+                        Application app = Application.create(appFolder.getAbsolutePath(), isApplyFilter);
                         if (app != null) apps.add(app);
                     }
                 }

@@ -11,19 +11,12 @@ import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
-import javafx.collections.FXCollections;
-import javafx.scene.Scene;
-import javafx.scene.control.ListView;
-import javafx.scene.control.SelectionMode;
-import javafx.scene.layout.StackPane;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
-import javax.swing.event.ListSelectionEvent;
-import javax.swing.event.ListSelectionListener;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -62,6 +55,8 @@ public class MainGUI extends JFrame {
         setLocationRelativeTo(getOwner());
         tvLogStatic = tvLog;
         cbFindInAllApp.setVisible(false);
+        btnViewUntranslatedArray.setVisible(false);
+        btnViewUnTranslatedString.setVisible(false);
         //TODO: For fast testing
         edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv10-XML-Compare");
         edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-10-XML-Vietnamese\\Vietnamese");
@@ -191,7 +186,7 @@ public class MainGUI extends JFrame {
 
             File transDevicesFolder = new File(translationFolder.getAbsolutePath() + "\\main");
             if (!transDevicesFolder.exists()) return null;
-            transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(),true);
+            transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
 
 
             File specificDevicesFolder = new File(translationFolder.getAbsolutePath() + "\\device");
@@ -225,8 +220,11 @@ public class MainGUI extends JFrame {
                 });
             });
 
-            if (cbFindFormatedString.isSelected())
+            if (cbFindFormatedString.isSelected()){
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
+                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\WrongArray", wrongApplications);
+
+            }
             if (cbFindUntranslated.isSelected()) {
                 Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
                 Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArray", untranslatedApplications);
@@ -245,6 +243,8 @@ public class MainGUI extends JFrame {
         @Override
         protected void done() {
             tvLogStatic.setText("Đã xong. Kiểm tra thư mục kết quả");
+            btnViewUntranslatedArray.setVisible(true);
+            btnViewUnTranslatedString.setVisible(true);
         }
     }
 
@@ -273,6 +273,7 @@ public class MainGUI extends JFrame {
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
+
     private void groupPlural(String appName, List<PluralRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
@@ -285,6 +286,7 @@ public class MainGUI extends JFrame {
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
+
     private List<UnTranslateable> createAutoIgnoredList() throws ParserConfigurationException, IOException, SAXException {
         List<UnTranslateable> unTranslateables = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -444,7 +446,7 @@ public class MainGUI extends JFrame {
 
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
-        TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(),false);
+        TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
         if (transDevices == null) return;
         List<String> duplicate = new ArrayList<>();
         transDevices.getApps().forEach(application -> {
@@ -472,6 +474,34 @@ public class MainGUI extends JFrame {
                     System.out.println("Converting " + applications.get(index).getName());
                     try {
                         Utils.convertUntranslateableFile(edtFilteredFolder.getText() + "\\UnTranslated\\", applications.get(index).getName());
+                    } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+        f.add(list);
+        f.pack();
+        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
+    }
+
+    private void btnViewUntranslatedArrayMouseClicked(MouseEvent e) {
+        JFrame f = new JFrame("Test");
+        List<WrongApplication> applications = untranslatedApplications.stream().filter(wrongApplication -> wrongApplication.getWrongTranslatedOriginArrays().size() > 0)
+                .collect(Collectors.toList());
+        JList<WrongApplication> list = new JList(applications.toArray());
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evt) {
+                JList list = (JList) evt.getSource();
+                if (evt.getClickCount() == 2) {
+                    int index = list.locationToIndex(evt.getPoint());
+                    System.out.println("Converting " + applications.get(index).getName());
+                    try {
+                        Utils.convertUntranslateableArrayFile(edtFilteredFolder.getText() + "\\UnTranslatedArray\\", applications.get(index).getName());
                     } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
                         e1.printStackTrace();
                     }
@@ -514,9 +544,10 @@ public class MainGUI extends JFrame {
         checkBox1 = new JCheckBox();
         btnStart = new JButton();
         btnStop = new JButton();
-        btnMoveToIgnored = new JButton();
-        btnCheckDuplicate = new JButton();
         btnViewUnTranslatedString = new JButton();
+        btnCheckDuplicate = new JButton();
+        btnViewUntranslatedArray = new JButton();
+        btnMoveToIgnored = new JButton();
         tvLog = new JLabel();
 
         //======== this ========
@@ -651,7 +682,7 @@ public class MainGUI extends JFrame {
                     btnStartMouseClicked(e);
                 }
             });
-            panel1.add(btnStart, CC.xy(15, 23));
+            panel1.add(btnStart, CC.xy(1, 25));
 
             //---- btnStop ----
             btnStop.setText("D\u1eebng");
@@ -662,27 +693,7 @@ public class MainGUI extends JFrame {
                     btnStopMouseClicked(e);
                 }
             });
-            panel1.add(btnStop, CC.xy(17, 23));
-
-            //---- btnMoveToIgnored ----
-            btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
-            btnMoveToIgnored.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnMoveToIgnoredMouseClicked(e);
-                }
-            });
-            panel1.add(btnMoveToIgnored, CC.xywh(11, 25, 9, 1));
-
-            //---- btnCheckDuplicate ----
-            btnCheckDuplicate.setText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p");
-            btnCheckDuplicate.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnCheckDuplicateMouseClicked(e);
-                }
-            });
-            panel1.add(btnCheckDuplicate, CC.xywh(15, 27, 3, 1));
+            panel1.add(btnStop, CC.xy(3, 25));
 
             //---- btnViewUnTranslatedString ----
             btnViewUnTranslatedString.setText("Xem string ch\u01b0a d\u1ecbch");
@@ -692,7 +703,37 @@ public class MainGUI extends JFrame {
                     btnViewUnTranslatedStringMouseClicked(e);
                 }
             });
-            panel1.add(btnViewUnTranslatedString, CC.xy(1, 29));
+            panel1.add(btnViewUnTranslatedString, CC.xy(1, 27));
+
+            //---- btnCheckDuplicate ----
+            btnCheckDuplicate.setText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p");
+            btnCheckDuplicate.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnCheckDuplicateMouseClicked(e);
+                }
+            });
+            panel1.add(btnCheckDuplicate, CC.xywh(3, 27, 5, 1));
+
+            //---- btnViewUntranslatedArray ----
+            btnViewUntranslatedArray.setText("Xem array ch\u01b0a d\u1ecbch");
+            btnViewUntranslatedArray.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnViewUntranslatedArrayMouseClicked(e);
+                }
+            });
+            panel1.add(btnViewUntranslatedArray, CC.xy(1, 29));
+
+            //---- btnMoveToIgnored ----
+            btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
+            btnMoveToIgnored.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    btnMoveToIgnoredMouseClicked(e);
+                }
+            });
+            panel1.add(btnMoveToIgnored, CC.xywh(3, 29, 9, 1));
 
             //---- tvLog ----
             tvLog.setText("Log");
@@ -737,9 +778,10 @@ public class MainGUI extends JFrame {
     private JCheckBox checkBox1;
     private JButton btnStart;
     private JButton btnStop;
-    private JButton btnMoveToIgnored;
-    private JButton btnCheckDuplicate;
     private JButton btnViewUnTranslatedString;
+    private JButton btnCheckDuplicate;
+    private JButton btnViewUntranslatedArray;
+    private JButton btnMoveToIgnored;
     private JLabel tvLog;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }
