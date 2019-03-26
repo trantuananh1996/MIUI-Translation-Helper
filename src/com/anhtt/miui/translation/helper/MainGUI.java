@@ -4,10 +4,14 @@
 
 package com.anhtt.miui.translation.helper;
 
+import javax.swing.border.*;
+import javax.swing.event.*;
+
 import com.anhtt.miui.translation.helper.model.*;
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
+import com.jgoodies.forms.factories.*;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
@@ -39,11 +43,9 @@ public class MainGUI extends JFrame {
     TranslatedDevice transDevices;
     List<OriginDevice> originDevices;
     List<OriginDevice> specificOriginDevices;
-    public static JLabel tvLogStatic;
+    public static JTextArea tvLogStatic;
     public static List<UnTranslateable> unTranslateables;
     public static List<UnTranslateable> autoIgnoredList;
-    public static List<WrongStringRes> wrongTranslateGlobals = new ArrayList<>();
-    public static List<WrongStringRes> wrongTranslateGlobalOrigin = new ArrayList<>();
     StringWorker worker;
     public List<WrongApplication> wrongApplications = new ArrayList<>();
     public List<WrongApplication> untranslatedApplications = new ArrayList<>();
@@ -52,11 +54,12 @@ public class MainGUI extends JFrame {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         initComponents();
         setSize(500, 500);
+        pack();
         setLocationRelativeTo(getOwner());
         tvLogStatic = tvLog;
-        cbFindInAllApp.setVisible(false);
         btnViewUntranslatedArray.setVisible(false);
         btnViewUnTranslatedString.setVisible(false);
+        btnMoveToIgnored.setVisible(false);
         //TODO: For fast testing
         edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv10-XML-Compare");
         edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-10-XML-Vietnamese\\Vietnamese");
@@ -74,13 +77,19 @@ public class MainGUI extends JFrame {
 
     }
 
-    public static void handleWrongString(OriginDevice originDevice, StringRes originString, StringRes translatedString) {
-
-    }
-
     private void btnStartMouseClicked(MouseEvent e) {
+        SearchOptions.searchArray = cbArray.isSelected();
+        SearchOptions.searchPlural = cbPlural.isSelected();
+        SearchOptions.searchString = cbString.isSelected();
+        SearchOptions.filterCanRemove = cbFindCanRemove.isSelected();
+        SearchOptions.filterFormatted = cbFindFormatedString.isSelected();
+        SearchOptions.filterUnTranslated = cbFindUntranslated.isSelected();
+        SearchOptions.deepFilterForUnTranslated = cbFindInAllApp.isSelected();
 
-
+        if (!SearchOptions.searchPlural && !SearchOptions.searchArray && !SearchOptions.searchString) {
+            JOptionPane.showMessageDialog(null, "Chưa chọn mục cần lọc");
+            return;
+        }
         String originPath = edtOriginFolder.getText();
         String translationPath = edtTranslatedFolder.getText();
         String filteredPath = edtFilteredFolder.getText();
@@ -99,15 +108,15 @@ public class MainGUI extends JFrame {
 
         if (!filteredFolder.exists()) filteredFolder.mkdirs();
         else {
-//            try {
-//                deleteDirectoryStream(filteredFolder.toPath());
-//            } catch (IOException e1) {
-//                e1.printStackTrace();
-//            }
+            try {
+                deleteDirectoryStream(filteredFolder.toPath());
+            } catch (IOException e1) {
+                e1.printStackTrace();
+            }
             filteredFolder.mkdirs();
         }
 
-        tvLog.setText("Đang chuẩn bị...");
+        tvLog.append("Đang chuẩn bị...");
 
         worker = new StringWorker(originFolder, translationFolder, filteredFolder);
         worker.execute();
@@ -220,7 +229,7 @@ public class MainGUI extends JFrame {
                 });
             });
 
-            if (cbFindFormatedString.isSelected()){
+            if (cbFindFormatedString.isSelected()) {
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
                 Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\WrongArray", wrongApplications);
 
@@ -237,12 +246,12 @@ public class MainGUI extends JFrame {
 
         @Override
         protected void process(List<String> chunks) {
-            for (String string : chunks) tvLogStatic.setText(string);
+            for (String string : chunks) tvLogStatic.append("\n" + string);
         }
 
         @Override
         protected void done() {
-            tvLogStatic.setText("Đã xong. Kiểm tra thư mục kết quả");
+            tvLogStatic.append("\n" + "Đã xong. Kiểm tra thư mục kết quả");
             btnViewUntranslatedArray.setVisible(true);
             btnViewUnTranslatedString.setVisible(true);
         }
@@ -435,7 +444,7 @@ public class MainGUI extends JFrame {
     private void btnStopMouseClicked(MouseEvent e) {
         worker.done();
         worker.cancel(true);
-        tvLog.setText("Đã hủy quá trình");
+        tvLog.append("\n" + "Đã hủy quá trình");
     }
 
     private void button1MouseClicked(MouseEvent e) {
@@ -482,7 +491,7 @@ public class MainGUI extends JFrame {
         });
         f.add(list);
         f.pack();
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         f.setLocationRelativeTo(null);
         f.setVisible(true);
     }
@@ -510,9 +519,13 @@ public class MainGUI extends JFrame {
         });
         f.add(list);
         f.pack();
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         f.setLocationRelativeTo(null);
         f.setVisible(true);
+    }
+
+    private void cbFindUntranslatedStateChanged(ChangeEvent e) {
+        cbFindInAllApp.setVisible(cbFindUntranslated.isSelected());
     }
 
 
@@ -520,6 +533,7 @@ public class MainGUI extends JFrame {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
         panel1 = new JPanel();
+        panel3 = new JPanel();
         label2 = new JLabel();
         edtOriginFolder = new JTextField();
         btnPickOrigin = new JButton();
@@ -532,23 +546,29 @@ public class MainGUI extends JFrame {
         label1 = new JLabel();
         edtResCheckFolder = new JTextField();
         btnPickResCheckFolder = new JButton();
-        label4 = new JLabel();
-        label5 = new JLabel();
+        panel4 = new JPanel();
+        panel7 = new JPanel();
         cbString = new JCheckBox();
-        cbFindFormatedString = new JCheckBox();
         cbArray = new JCheckBox();
-        cbFindUntranslated = new JCheckBox();
         cbPlural = new JCheckBox();
-        cbFindInAllApp = new JCheckBox();
+        panel8 = new JPanel();
+        cbFindFormatedString = new JCheckBox();
         cbFindCanRemove = new JCheckBox();
         checkBox1 = new JCheckBox();
+        cbFindUntranslated = new JCheckBox();
+        cbFindInAllApp = new JCheckBox();
+        panel5 = new JPanel();
+        panel2 = new JPanel();
         btnStart = new JButton();
         btnStop = new JButton();
-        btnViewUnTranslatedString = new JButton();
         btnCheckDuplicate = new JButton();
-        btnViewUntranslatedArray = new JButton();
+        btnViewUnTranslatedString = new JButton();
         btnMoveToIgnored = new JButton();
-        tvLog = new JLabel();
+        btnViewUntranslatedArray = new JButton();
+        panel6 = new JPanel();
+        label7 = new JLabel();
+        scrollPane1 = new JScrollPane();
+        tvLog = new JTextArea();
 
         //======== this ========
 
@@ -564,180 +584,251 @@ public class MainGUI extends JFrame {
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                "2*(default, $lcgap), $lcgap, 22dlu, 85dlu, 3*($lcgap, default), $lcgap, 71dlu, $lcgap, default, $lcgap, 22dlu",
-                "15*(default, $lgap), default"));
+                "5dlu, $lcgap, 402dlu, $lcgap",
+                "2*(default, $lgap), default"));
 
-            //---- label2 ----
-            label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
-            panel1.add(label2, CC.xy(1, 3));
-            panel1.add(edtOriginFolder, CC.xywh(3, 3, 15, 1));
+            //======== panel3 ========
+            {
+                panel3.setLayout(new FormLayout(
+                    "default, $lcgap, 275dlu, $lcgap, 26dlu",
+                    "3*(default, $lgap), default"));
 
-            //---- btnPickOrigin ----
-            btnPickOrigin.setText("...");
-            btnPickOrigin.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnPickOriginMouseClicked(e);
+                //---- label2 ----
+                label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
+                panel3.add(label2, CC.xy(1, 1));
+                panel3.add(edtOriginFolder, CC.xywh(3, 1, 2, 1));
+
+                //---- btnPickOrigin ----
+                btnPickOrigin.setText("...");
+                btnPickOrigin.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPickOriginMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPickOrigin, CC.xy(5, 1));
+
+                //---- label3 ----
+                label3.setText("Th\u01b0 m\u1ee5c \u0111\u00e3 d\u1ecbch");
+                panel3.add(label3, CC.xy(1, 3));
+                panel3.add(edtTranslatedFolder, CC.xywh(3, 3, 2, 1));
+
+                //---- btnPickTranslated ----
+                btnPickTranslated.setText("...");
+                btnPickTranslated.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPickTranslatedMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPickTranslated, CC.xy(5, 3));
+
+                //---- label6 ----
+                label6.setText("L\u01b0u file \u0111\u00e3 l\u1ecdc");
+                panel3.add(label6, CC.xy(1, 5));
+                panel3.add(edtFilteredFolder, CC.xywh(3, 5, 2, 1));
+
+                //---- btnPickFiltered ----
+                btnPickFiltered.setText("...");
+                btnPickFiltered.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPickFilteredMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPickFiltered, CC.xy(5, 5));
+
+                //---- label1 ----
+                label1.setText("Resources check");
+                panel3.add(label1, CC.xy(1, 7));
+                panel3.add(edtResCheckFolder, CC.xywh(3, 7, 2, 1));
+
+                //---- btnPickResCheckFolder ----
+                btnPickResCheckFolder.setText("...");
+                btnPickResCheckFolder.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPickResCheckFolderMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPickResCheckFolder, CC.xy(5, 7));
+            }
+            panel1.add(panel3, CC.xywh(3, 1, 2, 1));
+
+            //======== panel4 ========
+            {
+                panel4.setLayout(new FormLayout(
+                    "8*(default, $lcgap), default",
+                    "default"));
+
+                //======== panel7 ========
+                {
+                    panel7.setBorder(new CompoundBorder(
+                        new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
+                        Borders.DLU2));
+                    panel7.setLayout(new FormLayout(
+                        "42dlu",
+                        "2*(default, $lgap), default"));
+
+                    //---- cbString ----
+                    cbString.setText("string");
+                    cbString.setSelected(true);
+                    panel7.add(cbString, CC.xy(1, 1));
+
+                    //---- cbArray ----
+                    cbArray.setText("array");
+                    cbArray.setSelected(true);
+                    panel7.add(cbArray, CC.xy(1, 3));
+
+                    //---- cbPlural ----
+                    cbPlural.setText("plural");
+                    cbPlural.setSelected(true);
+                    panel7.add(cbPlural, CC.xy(1, 5));
                 }
-            });
-            panel1.add(btnPickOrigin, CC.xy(19, 3));
+                panel4.add(panel7, CC.xy(1, 1));
 
-            //---- label3 ----
-            label3.setText("Th\u01b0 m\u1ee5c \u0111\u00e3 d\u1ecbch");
-            panel1.add(label3, CC.xy(1, 5));
-            panel1.add(edtTranslatedFolder, CC.xywh(3, 5, 15, 1));
+                //======== panel8 ========
+                {
+                    panel8.setBorder(new TitledBorder("T\u00f9y ch\u1ecdn"));
+                    panel8.setLayout(new FormLayout(
+                        "default",
+                        "4*(default, $lgap), default"));
 
-            //---- btnPickTranslated ----
-            btnPickTranslated.setText("...");
-            btnPickTranslated.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnPickTranslatedMouseClicked(e);
+                    //---- cbFindFormatedString ----
+                    cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
+                    cbFindFormatedString.setSelected(true);
+                    cbFindFormatedString.setToolTipText("T\u00ecm nh\u1eefng string c\u00f3 format b\u1ecb d\u1ecbch sai do ch\u01b0a update theo ng\u00f4n ng\u1eef m\u1edbi");
+                    panel8.add(cbFindFormatedString, CC.xy(1, 1));
+
+                    //---- cbFindCanRemove ----
+                    cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
+                    cbFindCanRemove.setSelected(true);
+                    cbFindCanRemove.setToolTipText("Nh\u1eefng text m\u00e0 d\u1ecbch gi\u1ed1ng h\u1ec7t g\u1ed1c c\u00f3 th\u1ec3 b\u1ecf kh\u1ecfi g\u00f3i ng\u00f4n ng\u1eef");
+                    panel8.add(cbFindCanRemove, CC.xy(1, 3));
+
+                    //---- checkBox1 ----
+                    checkBox1.setText("So s\u00e1nh v\u1edbi string b\u1ecb b\u1ecf qua");
+                    checkBox1.setToolTipText("B\u1ecf qua text trong danh s\u00e1ch khi qu\u00e9t");
+                    checkBox1.setSelected(true);
+                    panel8.add(checkBox1, CC.xy(1, 5));
+
+                    //---- cbFindUntranslated ----
+                    cbFindUntranslated.setText("T\u00ecm text ch\u01b0a d\u1ecbch");
+                    cbFindUntranslated.setToolTipText("T\u00ecm text ch\u01b0a d\u1ecbch trong to\u00e0n b\u1ed9 g\u00f3i ng\u00f4n ng\u1eef, \u1edf t\u1ea5t c\u1ea3 c\u00e1c thi\u1ebft b\u1ecb");
+                    cbFindUntranslated.setSelected(true);
+                    cbFindUntranslated.addChangeListener(e -> cbFindUntranslatedStateChanged(e));
+                    panel8.add(cbFindUntranslated, CC.xy(1, 7));
+
+                    //---- cbFindInAllApp ----
+                    cbFindInAllApp.setText("T\u00ecm trong to\u00e0n b\u1ed9 (l\u00e2u h\u01a1n r\u1ea5t nhi\u1ec1u)");
+                    panel8.add(cbFindInAllApp, CC.xy(1, 9));
                 }
-            });
-            panel1.add(btnPickTranslated, CC.xy(19, 5));
+                panel4.add(panel8, CC.xy(3, 1));
 
-            //---- label6 ----
-            label6.setText("L\u01b0u file \u0111\u00e3 l\u1ecdc");
-            panel1.add(label6, CC.xy(1, 7));
-            panel1.add(edtFilteredFolder, CC.xywh(3, 7, 15, 1));
+                //======== panel5 ========
+                {
+                    panel5.setBorder(new TitledBorder("H\u00e0nh \u0111\u1ed9ng"));
+                    panel5.setLayout(new FormLayout(
+                        "88dlu, $lcgap, 84dlu",
+                        "2*(default, $lgap), default"));
 
-            //---- btnPickFiltered ----
-            btnPickFiltered.setText("...");
-            btnPickFiltered.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnPickFilteredMouseClicked(e);
+                    //======== panel2 ========
+                    {
+                        panel2.setLayout(new FormLayout(
+                            "46dlu, $lcgap, 41dlu",
+                            "default"));
+
+                        //---- btnStart ----
+                        btnStart.setText("B\u1eaft \u0111\u1ea7u");
+                        btnStart.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                btnStartMouseClicked(e);
+                            }
+                        });
+                        panel2.add(btnStart, CC.xy(1, 1));
+
+                        //---- btnStop ----
+                        btnStop.setText("D\u1eebng");
+                        btnStop.addMouseListener(new MouseAdapter() {
+                            @Override
+                            public void mouseClicked(MouseEvent e) {
+                                button1MouseClicked(e);
+                                btnStopMouseClicked(e);
+                            }
+                        });
+                        panel2.add(btnStop, CC.xy(3, 1));
+                    }
+                    panel5.add(panel2, CC.xy(1, 1));
+
+                    //---- btnCheckDuplicate ----
+                    btnCheckDuplicate.setText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p");
+                    btnCheckDuplicate.setToolTipText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p trong th\u01b0 m\u1ee5c \u0111\u00e3 d\u1ecbch");
+                    btnCheckDuplicate.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            btnCheckDuplicateMouseClicked(e);
+                        }
+                    });
+                    panel5.add(btnCheckDuplicate, CC.xy(3, 1));
+
+                    //---- btnViewUnTranslatedString ----
+                    btnViewUnTranslatedString.setText("Xem string ch\u01b0a d\u1ecbch");
+                    btnViewUnTranslatedString.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            btnViewUnTranslatedStringMouseClicked(e);
+                        }
+                    });
+                    panel5.add(btnViewUnTranslatedString, CC.xy(1, 3));
+
+                    //---- btnMoveToIgnored ----
+                    btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
+                    btnMoveToIgnored.setVisible(false);
+                    btnMoveToIgnored.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            btnMoveToIgnoredMouseClicked(e);
+                        }
+                    });
+                    panel5.add(btnMoveToIgnored, CC.xy(3, 3));
+
+                    //---- btnViewUntranslatedArray ----
+                    btnViewUntranslatedArray.setText("Xem array ch\u01b0a d\u1ecbch");
+                    btnViewUntranslatedArray.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            btnViewUntranslatedArrayMouseClicked(e);
+                        }
+                    });
+                    panel5.add(btnViewUntranslatedArray, CC.xy(1, 5));
                 }
-            });
-            panel1.add(btnPickFiltered, CC.xy(19, 7));
+                panel4.add(panel5, CC.xy(5, 1));
+            }
+            panel1.add(panel4, CC.xywh(3, 3, 2, 1));
 
-            //---- label1 ----
-            label1.setText("Resources check");
-            panel1.add(label1, CC.xy(1, 9));
-            panel1.add(edtResCheckFolder, CC.xywh(3, 9, 15, 1));
+            //======== panel6 ========
+            {
+                panel6.setLayout(new FormLayout(
+                    "362dlu, 2*($lcgap, default)",
+                    "default, 97dlu"));
 
-            //---- btnPickResCheckFolder ----
-            btnPickResCheckFolder.setText("...");
-            btnPickResCheckFolder.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnPickResCheckFolderMouseClicked(e);
+                //---- label7 ----
+                label7.setText("Log");
+                panel6.add(label7, CC.xy(1, 1));
+
+                //======== scrollPane1 ========
+                {
+                    scrollPane1.setMinimumSize(new Dimension(16, 170));
+
+                    //---- tvLog ----
+                    tvLog.setPreferredSize(new Dimension(40, 160));
+                    tvLog.setMinimumSize(new Dimension(7, 170));
+                    scrollPane1.setViewportView(tvLog);
                 }
-            });
-            panel1.add(btnPickResCheckFolder, CC.xy(19, 9));
-
-            //---- label4 ----
-            label4.setText("T\u00f9y ch\u1ecdn d\u1ecbch");
-            panel1.add(label4, CC.xy(1, 13));
-
-            //---- label5 ----
-            label5.setText("T\u00f9y ch\u1ecdn");
-            panel1.add(label5, CC.xywh(6, 13, 2, 1));
-
-            //---- cbString ----
-            cbString.setText("string");
-            panel1.add(cbString, CC.xy(1, 15));
-
-            //---- cbFindFormatedString ----
-            cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
-            cbFindFormatedString.setSelected(true);
-            cbFindFormatedString.setToolTipText("T\u00ecm nh\u1eefng string c\u00f3 format b\u1ecb d\u1ecbch sai do ch\u01b0a update theo ng\u00f4n ng\u1eef m\u1edbi");
-            panel1.add(cbFindFormatedString, CC.xywh(6, 15, 2, 1));
-
-            //---- cbArray ----
-            cbArray.setText("array");
-            panel1.add(cbArray, CC.xy(1, 17));
-
-            //---- cbFindUntranslated ----
-            cbFindUntranslated.setText("T\u00ecm text ch\u01b0a d\u1ecbch");
-            cbFindUntranslated.setToolTipText("T\u00ecm text ch\u01b0a d\u1ecbch trong to\u00e0n b\u1ed9 g\u00f3i ng\u00f4n ng\u1eef, \u1edf t\u1ea5t c\u1ea3 c\u00e1c thi\u1ebft b\u1ecb");
-            cbFindUntranslated.setSelected(true);
-            panel1.add(cbFindUntranslated, CC.xywh(6, 17, 2, 1));
-
-            //---- cbPlural ----
-            cbPlural.setText("plural");
-            panel1.add(cbPlural, CC.xy(1, 19));
-
-            //---- cbFindInAllApp ----
-            cbFindInAllApp.setText("Ch\u1ec9 t\u00ecm text ch\u01b0a c\u00f3 \u1edf b\u1ea5t k\u1ef3 app n\u00e0o (l\u00e2u h\u01a1n r\u1ea5t nhi\u1ec1u)");
-            panel1.add(cbFindInAllApp, CC.xywh(7, 19, 13, 1));
-
-            //---- cbFindCanRemove ----
-            cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
-            cbFindCanRemove.setSelected(true);
-            cbFindCanRemove.setToolTipText("Nh\u1eefng text m\u00e0 d\u1ecbch gi\u1ed1ng h\u1ec7t g\u1ed1c c\u00f3 th\u1ec3 b\u1ecf kh\u1ecfi g\u00f3i ng\u00f4n ng\u1eef");
-            panel1.add(cbFindCanRemove, CC.xywh(6, 21, 2, 1));
-
-            //---- checkBox1 ----
-            checkBox1.setText("So s\u00e1nh v\u1edbi string b\u1ecb b\u1ecf qua");
-            checkBox1.setToolTipText("B\u1ecf qua text trong danh s\u00e1ch khi qu\u00e9t");
-            panel1.add(checkBox1, CC.xywh(6, 23, 2, 1));
-
-            //---- btnStart ----
-            btnStart.setText("B\u1eaft \u0111\u1ea7u");
-            btnStart.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnStartMouseClicked(e);
-                }
-            });
-            panel1.add(btnStart, CC.xy(1, 25));
-
-            //---- btnStop ----
-            btnStop.setText("D\u1eebng");
-            btnStop.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    button1MouseClicked(e);
-                    btnStopMouseClicked(e);
-                }
-            });
-            panel1.add(btnStop, CC.xy(3, 25));
-
-            //---- btnViewUnTranslatedString ----
-            btnViewUnTranslatedString.setText("Xem string ch\u01b0a d\u1ecbch");
-            btnViewUnTranslatedString.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnViewUnTranslatedStringMouseClicked(e);
-                }
-            });
-            panel1.add(btnViewUnTranslatedString, CC.xy(1, 27));
-
-            //---- btnCheckDuplicate ----
-            btnCheckDuplicate.setText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p");
-            btnCheckDuplicate.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnCheckDuplicateMouseClicked(e);
-                }
-            });
-            panel1.add(btnCheckDuplicate, CC.xywh(3, 27, 5, 1));
-
-            //---- btnViewUntranslatedArray ----
-            btnViewUntranslatedArray.setText("Xem array ch\u01b0a d\u1ecbch");
-            btnViewUntranslatedArray.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnViewUntranslatedArrayMouseClicked(e);
-                }
-            });
-            panel1.add(btnViewUntranslatedArray, CC.xy(1, 29));
-
-            //---- btnMoveToIgnored ----
-            btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
-            btnMoveToIgnored.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    btnMoveToIgnoredMouseClicked(e);
-                }
-            });
-            panel1.add(btnMoveToIgnored, CC.xywh(3, 29, 9, 1));
-
-            //---- tvLog ----
-            tvLog.setText("Log");
-            panel1.add(tvLog, CC.xywh(1, 31, 13, 1));
+                panel6.add(scrollPane1, CC.xy(1, 2));
+            }
+            panel1.add(panel6, CC.xy(3, 5));
         }
         add(panel1, BorderLayout.CENTER);
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
@@ -754,6 +845,7 @@ public class MainGUI extends JFrame {
     // JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
     // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
     private JPanel panel1;
+    private JPanel panel3;
     private JLabel label2;
     private JTextField edtOriginFolder;
     private JButton btnPickOrigin;
@@ -766,22 +858,28 @@ public class MainGUI extends JFrame {
     private JLabel label1;
     private JTextField edtResCheckFolder;
     private JButton btnPickResCheckFolder;
-    private JLabel label4;
-    private JLabel label5;
+    private JPanel panel4;
+    private JPanel panel7;
     private JCheckBox cbString;
-    private JCheckBox cbFindFormatedString;
     private JCheckBox cbArray;
-    private JCheckBox cbFindUntranslated;
     private JCheckBox cbPlural;
-    private JCheckBox cbFindInAllApp;
+    private JPanel panel8;
+    private JCheckBox cbFindFormatedString;
     private JCheckBox cbFindCanRemove;
     private JCheckBox checkBox1;
+    private JCheckBox cbFindUntranslated;
+    private JCheckBox cbFindInAllApp;
+    private JPanel panel5;
+    private JPanel panel2;
     private JButton btnStart;
     private JButton btnStop;
-    private JButton btnViewUnTranslatedString;
     private JButton btnCheckDuplicate;
-    private JButton btnViewUntranslatedArray;
+    private JButton btnViewUnTranslatedString;
     private JButton btnMoveToIgnored;
-    private JLabel tvLog;
+    private JButton btnViewUntranslatedArray;
+    private JPanel panel6;
+    private JLabel label7;
+    private JScrollPane scrollPane1;
+    private JTextArea tvLog;
     // JFormDesigner - End of variables declaration  //GEN-END:variables
 }
