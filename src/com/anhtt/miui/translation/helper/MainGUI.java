@@ -4,14 +4,11 @@
 
 package com.anhtt.miui.translation.helper;
 
-import javax.swing.border.*;
-import javax.swing.event.*;
-
 import com.anhtt.miui.translation.helper.model.*;
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
-import com.jgoodies.forms.factories.*;
+import com.jgoodies.forms.factories.Borders;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
@@ -21,6 +18,9 @@ import org.xml.sax.SAXException;
 import javax.swing.*;
 import javax.swing.border.Border;
 import javax.swing.border.CompoundBorder;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.text.DefaultCaret;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -30,33 +30,43 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author unknown
  */
 public class MainGUI extends JFrame {
+
     TranslatedDevice transDevices;
     List<OriginDevice> originDevices;
     List<OriginDevice> specificOriginDevices;
-    public static JTextArea tvLogStatic;
     public static List<UnTranslateable> unTranslateables;
     public static List<UnTranslateable> autoIgnoredList;
     StringWorker worker;
     public List<WrongApplication> wrongApplications = new ArrayList<>();
     public List<WrongApplication> untranslatedApplications = new ArrayList<>();
+    Logger logger = Logger.getLogger("Log");
 
     public MainGUI() {
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         initComponents();
-        setSize(500, 500);
+        tvLog.setLineWrap(true);
+        tvLog.setWrapStyleWord(true);
+        DefaultCaret caret = (DefaultCaret) tvLog.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+
+        logger.setUseParentHandlers(false);
+        OutputStream os = new TextAreaOutputStream(tvLog);
+        logger.addHandler(new TextAreaHandler(os));
+
         pack();
         setLocationRelativeTo(getOwner());
-        tvLogStatic = tvLog;
         btnViewUntranslatedArray.setVisible(false);
         btnViewUnTranslatedString.setVisible(false);
         btnMoveToIgnored.setVisible(false);
@@ -116,7 +126,7 @@ public class MainGUI extends JFrame {
             filteredFolder.mkdirs();
         }
 
-        tvLog.append("Đang chuẩn bị...");
+        logger.info("Đang chuẩn bị...");
 
         worker = new StringWorker(originFolder, translationFolder, filteredFolder);
         worker.execute();
@@ -246,12 +256,12 @@ public class MainGUI extends JFrame {
 
         @Override
         protected void process(List<String> chunks) {
-            for (String string : chunks) tvLogStatic.append("\n" + string);
+            for (String string : chunks) logger.info(string);
         }
 
         @Override
         protected void done() {
-            tvLogStatic.append("\n" + "Đã xong. Kiểm tra thư mục kết quả");
+            logger.info("Đã xong. Kiểm tra thư mục kết quả");
             btnViewUntranslatedArray.setVisible(true);
             btnViewUnTranslatedString.setVisible(true);
         }
@@ -444,7 +454,7 @@ public class MainGUI extends JFrame {
     private void btnStopMouseClicked(MouseEvent e) {
         worker.done();
         worker.cancel(true);
-        tvLog.append("\n" + "Đã hủy quá trình");
+        logger.info("Đã hủy quá trình");
     }
 
     private void button1MouseClicked(MouseEvent e) {
@@ -452,18 +462,27 @@ public class MainGUI extends JFrame {
     }
 
     private void btnCheckDuplicateMouseClicked(MouseEvent e) {
-
-        tvLog.append("\nKiểm tra trùng lặp");
+        SearchOptions.searchArray = cbArray.isSelected();
+        SearchOptions.searchPlural = cbPlural.isSelected();
+        SearchOptions.searchString = cbString.isSelected();
+        SearchOptions.filterCanRemove = cbFindCanRemove.isSelected();
+        SearchOptions.filterFormatted = cbFindFormatedString.isSelected();
+        SearchOptions.filterUnTranslated = cbFindUntranslated.isSelected();
+        SearchOptions.deepFilterForUnTranslated = cbFindInAllApp.isSelected();
+        logger.info("Kiểm tra trùng lặp");
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
-        TranslatedDevice transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
+        transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
         if (transDevices == null) return;
         transDevices.getApps().forEach(application -> {
-            tvLog.append("\n" + application.getName());
             application.setDuplicateString(getDuplicates(application.getOriginString()));
             if (application.getDuplicateString() == null || application.getDuplicateString().size() == 0) {
-                tvLog.append("\nKhông có trùng lặp");
-            } else tvLog.append("\n Có trùng lặp");
+//                logger.info("Không có trùng lặp");
+            } else {
+                logger.info(application.getName());
+                logger.info("Có trùng lặp");
+                btnViewDuplicate.setVisible(true);
+            }
         });
     }
 
@@ -475,8 +494,9 @@ public class MainGUI extends JFrame {
     }
 
     private static Map<String, List<StringRes>> getDuplicatesMap(List<StringRes> personList) {
-        return personList.stream().collect(Collectors.groupingBy(StringRes::getGroupValue));
+        return personList.stream().collect(Collectors.groupingBy(StringRes::getName));
     }
+
 
     private void btnViewUnTranslatedStringMouseClicked(MouseEvent e) {
         JFrame f = new JFrame("Test");
@@ -490,7 +510,7 @@ public class MainGUI extends JFrame {
                 JList list = (JList) evt.getSource();
                 if (evt.getClickCount() == 2) {
                     int index = list.locationToIndex(evt.getPoint());
-                    System.out.println("Converting " + applications.get(index).getName());
+                    logger.info("Converting " + applications.get(index).getName());
                     try {
                         Utils.convertUntranslateableFile(edtFilteredFolder.getText() + "\\UnTranslated\\", applications.get(index).getName());
                     } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
@@ -518,7 +538,7 @@ public class MainGUI extends JFrame {
                 JList list = (JList) evt.getSource();
                 if (evt.getClickCount() == 2) {
                     int index = list.locationToIndex(evt.getPoint());
-                    System.out.println("Converting " + applications.get(index).getName());
+                    logger.info("Converting " + applications.get(index).getName());
                     try {
                         Utils.convertUntranslateableArrayFile(edtFilteredFolder.getText() + "\\UnTranslatedArray\\", applications.get(index).getName());
                     } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
@@ -536,6 +556,34 @@ public class MainGUI extends JFrame {
 
     private void cbFindUntranslatedStateChanged(ChangeEvent e) {
         cbFindInAllApp.setVisible(cbFindUntranslated.isSelected());
+    }
+
+    private void btnViewDuplicateMouseClicked(MouseEvent e) {
+        JFrame f = new JFrame("Trùng");
+        List<Application> applications = transDevices.getApps().stream().filter(application -> application.getDuplicateString() != null && application.getDuplicateString().size() > 0).collect(Collectors.toList());
+        JList<Application> list = new JList(applications.toArray());
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evt) {
+                JList list = (JList) evt.getSource();
+                if (evt.getClickCount() == 2) {
+                    int index = list.locationToIndex(evt.getPoint());
+                    logger.info("Converting " + applications.get(index).getName());
+                    try {
+                        Desktop.getDesktop().open(new File(checkTranslationFolder(edtTranslatedFolder.getText()).getAbsolutePath()+"\\main\\"+applications.get(index).getName()));
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    }
+
+                }
+            }
+        });
+        f.add(list);
+        f.pack();
+        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
     }
 
 
@@ -575,8 +623,9 @@ public class MainGUI extends JFrame {
         btnViewUnTranslatedString = new JButton();
         btnMoveToIgnored = new JButton();
         btnViewUntranslatedArray = new JButton();
-        panel6 = new JPanel();
-        label7 = new JLabel();
+        button1 = new JButton();
+        btnViewDuplicate = new JButton();
+        panelLog = new JPanel();
         scrollPane1 = new JScrollPane();
         tvLog = new JTextArea();
 
@@ -584,29 +633,24 @@ public class MainGUI extends JFrame {
 
         // JFormDesigner evaluation mark
         setBorder(new javax.swing.border.CompoundBorder(
-                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                        "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                        javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                        java.awt.Color.red), getBorder()));
-        addPropertyChangeListener(new java.beans.PropertyChangeListener() {
-            public void propertyChange(java.beans.PropertyChangeEvent e) {
-                if ("border".equals(e.getPropertyName())) throw new RuntimeException();
-            }
-        });
+            new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
+                "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
+                javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
+                java.awt.Color.red), getBorder())); addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
 
         setLayout(new BorderLayout());
 
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                    "5dlu, $lcgap, 402dlu, $lcgap",
-                    "2*(default, $lgap), default"));
+                "5dlu, $lcgap, 402dlu, $lcgap",
+                "2*(default, $lgap), default"));
 
             //======== panel3 ========
             {
                 panel3.setLayout(new FormLayout(
-                        "default, $lcgap, 275dlu, $lcgap, 26dlu",
-                        "3*(default, $lgap), default"));
+                    "default, $lcgap, 275dlu, $lcgap, 26dlu",
+                    "3*(default, $lgap), default"));
 
                 //---- label2 ----
                 label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
@@ -673,17 +717,17 @@ public class MainGUI extends JFrame {
             //======== panel4 ========
             {
                 panel4.setLayout(new FormLayout(
-                        "8*(default, $lcgap), default",
-                        "default"));
+                    "8*(default, $lcgap), default",
+                    "default"));
 
                 //======== panel7 ========
                 {
                     panel7.setBorder(new CompoundBorder(
-                            new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
-                            Borders.DLU2));
+                        new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
+                        Borders.DLU2));
                     panel7.setLayout(new FormLayout(
-                            "42dlu",
-                            "2*(default, $lgap), default"));
+                        "42dlu",
+                        "2*(default, $lgap), default"));
 
                     //---- cbString ----
                     cbString.setText("string");
@@ -706,8 +750,8 @@ public class MainGUI extends JFrame {
                 {
                     panel8.setBorder(new TitledBorder("T\u00f9y ch\u1ecdn"));
                     panel8.setLayout(new FormLayout(
-                            "default",
-                            "4*(default, $lgap), default"));
+                        "default",
+                        "4*(default, $lgap), default"));
 
                     //---- cbFindFormatedString ----
                     cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
@@ -744,14 +788,14 @@ public class MainGUI extends JFrame {
                 {
                     panel5.setBorder(new TitledBorder("H\u00e0nh \u0111\u1ed9ng"));
                     panel5.setLayout(new FormLayout(
-                            "88dlu, $lcgap, 84dlu",
-                            "2*(default, $lgap), default"));
+                        "101dlu, $lcgap, 84dlu",
+                        "3*(default, $lgap), default"));
 
                     //======== panel2 ========
                     {
                         panel2.setLayout(new FormLayout(
-                                "46dlu, $lcgap, 41dlu",
-                                "default"));
+                            "51dlu, $lcgap, 46dlu",
+                            "default"));
 
                         //---- btnStart ----
                         btnStart.setText("B\u1eaft \u0111\u1ea7u");
@@ -765,6 +809,7 @@ public class MainGUI extends JFrame {
 
                         //---- btnStop ----
                         btnStop.setText("D\u1eebng");
+                        btnStop.setVisible(false);
                         btnStop.addMouseListener(new MouseAdapter() {
                             @Override
                             public void mouseClicked(MouseEvent e) {
@@ -817,33 +862,43 @@ public class MainGUI extends JFrame {
                         }
                     });
                     panel5.add(btnViewUntranslatedArray, CC.xy(1, 5));
+
+                    //---- button1 ----
+                    button1.setText("Xu\u1ea5t ng\u00f4n ng\u1eef");
+                    button1.setVisible(false);
+                    panel5.add(button1, CC.xy(1, 7));
+
+                    //---- btnViewDuplicate ----
+                    btnViewDuplicate.setText("Xem tr\u00f9ng l\u1eb7p");
+                    btnViewDuplicate.setVisible(false);
+                    btnViewDuplicate.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            btnViewDuplicateMouseClicked(e);
+                        }
+                    });
+                    panel5.add(btnViewDuplicate, CC.xy(3, 7));
                 }
                 panel4.add(panel5, CC.xy(5, 1));
             }
             panel1.add(panel4, CC.xywh(3, 3, 2, 1));
 
-            //======== panel6 ========
+            //======== panelLog ========
             {
-                panel6.setLayout(new FormLayout(
-                        "362dlu, 2*($lcgap, default)",
-                        "default, 97dlu"));
-
-                //---- label7 ----
-                label7.setText("Log");
-                panel6.add(label7, CC.xy(1, 1));
+                panelLog.setBorder(new TitledBorder("Log"));
+                panelLog.setPreferredSize(new Dimension(666, 200));
+                panelLog.setLayout(new FormLayout(
+                    "393dlu",
+                    "106dlu"));
 
                 //======== scrollPane1 ========
                 {
-                    scrollPane1.setMinimumSize(new Dimension(16, 170));
-
-                    //---- tvLog ----
-                    tvLog.setPreferredSize(new Dimension(40, 160));
-                    tvLog.setMinimumSize(new Dimension(7, 170));
+                    scrollPane1.setPreferredSize(new Dimension(2, 200));
                     scrollPane1.setViewportView(tvLog);
                 }
-                panel6.add(scrollPane1, CC.xy(1, 2));
+                panelLog.add(scrollPane1, CC.xy(1, 1));
             }
-            panel1.add(panel6, CC.xy(3, 5));
+            panel1.add(panelLog, CC.xy(3, 5));
         }
         add(panel1, BorderLayout.CENTER);
         // JFormDesigner - End of component initialization  //GEN-END:initComponents
@@ -892,8 +947,9 @@ public class MainGUI extends JFrame {
     private JButton btnViewUnTranslatedString;
     private JButton btnMoveToIgnored;
     private JButton btnViewUntranslatedArray;
-    private JPanel panel6;
-    private JLabel label7;
+    private JButton button1;
+    private JButton btnViewDuplicate;
+    private JPanel panelLog;
     private JScrollPane scrollPane1;
     private JTextArea tvLog;
     // JFormDesigner - End of variables declaration  //GEN-END:variables

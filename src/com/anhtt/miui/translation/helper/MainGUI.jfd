@@ -177,13 +177,13 @@ new FormModel {
 						"gridX": 3
 					} )
 					add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
-						"$columnSpecs": "88dlu, labelcompgap, 84dlu"
-						"$rowSpecs": "default, linegap, default, linegap, default"
+						"$columnSpecs": "101dlu, labelcompgap, 84dlu"
+						"$rowSpecs": "default, linegap, default, linegap, default, linegap, default"
 					} ) {
 						name: "panel5"
 						"border": new javax.swing.border.TitledBorder( "Hành động" )
 						add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
-							"$columnSpecs": "46dlu, labelcompgap, 41dlu"
+							"$columnSpecs": "51dlu, labelcompgap, 46dlu"
 							"$rowSpecs": "default"
 						} ) {
 							name: "panel2"
@@ -195,6 +195,7 @@ new FormModel {
 							add( new FormComponent( "javax.swing.JButton" ) {
 								name: "btnStop"
 								"text": "Dừng"
+								"visible": false
 								addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "button1MouseClicked", true ) )
 								addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnStopMouseClicked", true ) )
 							}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
@@ -232,6 +233,23 @@ new FormModel {
 						}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
 							"gridY": 5
 						} )
+						add( new FormComponent( "javax.swing.JButton" ) {
+							name: "button1"
+							"text": "Xuất ngôn ngữ"
+							"visible": false
+						}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+							"gridX": 1
+							"gridY": 7
+						} )
+						add( new FormComponent( "javax.swing.JButton" ) {
+							name: "btnViewDuplicate"
+							"text": "Xem trùng lặp"
+							"visible": false
+							addEvent( new FormEvent( "java.awt.event.MouseListener", "mouseClicked", "btnViewDuplicateMouseClicked", true ) )
+						}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
+							"gridX": 3
+							"gridY": 7
+						} )
 					}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
 						"gridX": 5
 					} )
@@ -241,24 +259,21 @@ new FormModel {
 					"gridWidth": 2
 				} )
 				add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class com.jgoodies.forms.layout.FormLayout ) {
-					"$columnSpecs": "362dlu, labelcompgap, default, labelcompgap, default"
-					"$rowSpecs": "default, 97dlu"
+					"$columnSpecs": "393dlu"
+					"$rowSpecs": "106dlu"
 				} ) {
-					name: "panel6"
-					add( new FormComponent( "javax.swing.JLabel" ) {
-						name: "label7"
-						"text": "Log"
-					}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) )
+					name: "panelLog"
+					"border": new javax.swing.border.TitledBorder( "Log" )
+					"preferredSize": new java.awt.Dimension( 666, 200 )
 					add( new FormContainer( "javax.swing.JScrollPane", new FormLayoutManager( class javax.swing.JScrollPane ) ) {
 						name: "scrollPane1"
-						"minimumSize": new java.awt.Dimension( 16, 170 )
+						"preferredSize": new java.awt.Dimension( 2, 200 )
 						add( new FormComponent( "javax.swing.JTextArea" ) {
 							name: "tvLog"
-							"preferredSize": new java.awt.Dimension( 40, 160 )
-							"minimumSize": new java.awt.Dimension( 7, 170 )
 						} )
 					}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
-						"gridY": 2
+						"gridX": 1
+						"gridY": 1
 					} )
 				}, new FormLayoutConstraints( class com.jgoodies.forms.layout.CellConstraints ) {
 					"gridX": 3

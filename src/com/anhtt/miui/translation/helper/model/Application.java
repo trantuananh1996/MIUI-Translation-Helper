@@ -436,4 +436,8 @@ public class Application {
     public List<StringRes> getDuplicateString() {
         return duplicateString;
     }
+    @Override
+    public String toString() {
+        return name;
+    }
 }

@@ -42,7 +42,7 @@ public class OriginDevice {
 
         if (file.exists()) {
             OriginDevice originDevice = new OriginDevice(deviceName, file);
-            MainGUI.tvLogStatic.setText("Đang xử lý " + deviceName);
+            swingWorker.sendLog("Đang xử lý " + deviceName);
             File[] child = file.listFiles();
             if (child != null) {
                 List<Application> apps = new ArrayList<>();
