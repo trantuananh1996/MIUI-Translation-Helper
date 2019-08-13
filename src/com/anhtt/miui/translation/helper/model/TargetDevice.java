@@ -6,9 +6,7 @@ import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.sun.istack.internal.Nullable;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -18,33 +16,52 @@ public class TargetDevice {
     private String name;
     private File translation;
     private List<Application> apps;
-    private List<StringRes> allStrings = new ArrayList<>();
-    private List<ArrayRes> allArrays = new ArrayList<>();
-    private List<PluralRes> allPlurals = new ArrayList<>();
+    //    private List<StringRes> allStrings = new ArrayList<>();
+    private Map<String, StringRes> mapAllStrings = new HashMap<>();
+    private Map<String, ArrayRes> mapAllArrays = new HashMap<>();
+//    private List<ArrayRes> allArrays = new ArrayList<>();
+private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
 
-    public List<PluralRes> getAllPlurals() {
-        return allPlurals;
+    public Map<String, PluralRes> getMapAllPlurals() {
+        return mapAllPlurals;
     }
 
-    public void setAllPlurals(List<PluralRes> allPlurals) {
-        this.allPlurals = allPlurals;
+    public void setMapAllPlurals(Map<String, PluralRes> mapAllPlurals) {
+        this.mapAllPlurals = mapAllPlurals;
     }
 
-    public List<StringRes> getAllStrings() {
-        return allStrings;
+    public Map<String, ArrayRes> getMapAllArrays() {
+        return mapAllArrays;
     }
 
-    public void setAllStrings(List<StringRes> allStrings) {
-        this.allStrings = allStrings;
+    public void setMapAllArrays(Map<String, ArrayRes> mapAllArrays) {
+        this.mapAllArrays = mapAllArrays;
     }
 
-    public List<ArrayRes> getAllArrays() {
-        return allArrays;
+    public Map<String, StringRes> getMapAllStrings() {
+        return mapAllStrings;
     }
 
-    public void setAllArrays(List<ArrayRes> allArrays) {
-        this.allArrays = allArrays;
+    public void setMapAllStrings(Map<String, StringRes> mapAllStrings) {
+        this.mapAllStrings = mapAllStrings;
     }
+
+
+//    public List<StringRes> getAllStrings() {
+//        return allStrings;
+//    }
+
+//    public void setAllStrings(List<StringRes> allStrings) {
+//        this.allStrings = allStrings;
+//    }
+
+//    public List<ArrayRes> getAllArrays() {
+//        return allArrays;
+//    }
+//
+//    public void setAllArrays(List<ArrayRes> allArrays) {
+//        this.allArrays = allArrays;
+//    }
 
     public TargetDevice(String name, File translation) {
         this.name = name;
@@ -84,15 +101,15 @@ public class TargetDevice {
                         Application app = Application.create(appFolder.getAbsolutePath(), isApplyFilter);
                         if (app != null) {
                             apps.add(app);
-                            originDevice.getAllStrings().addAll(app.getOriginString());
-                            originDevice.getAllArrays().addAll(app.getOriginArrays());
-                            originDevice.getAllPlurals().addAll(app.getOriginPlurals());
+                            originDevice.getMapAllStrings().putAll(app.getMapOriginStrings());
+                            originDevice.getMapAllArrays().putAll(app.getMapOriginArrays());
+                            originDevice.getMapAllPlurals().putAll(app.getMapOriginPlurals());
                         }
                     }
                 }
-                originDevice.setAllStrings(originDevice.getAllStrings().stream().filter(distinctByKey(stringRes -> stringRes.getName() + stringRes.getValue())).collect(Collectors.toList()));
-                originDevice.setAllArrays(originDevice.getAllArrays().stream().filter(distinctByKey(arrayRes -> arrayRes.getName() + arrayRes.getArrayType() + arrayRes.getItems().size())).collect(Collectors.toList()));
-                originDevice.setAllPlurals(originDevice.getAllPlurals().stream().filter(distinctByKey(pluralRes -> pluralRes.getName() + pluralRes.getItems().size())).collect(Collectors.toList()));
+//                originDevice.setAllStrings(originDevice.getAllStrings().stream().filter(distinctByKey(stringRes -> stringRes.getName() + stringRes.getValue())).collect(Collectors.toList()));
+//                originDevice.setAllArrays(originDevice.getAllArrays().stream().filter(distinctByKey(arrayRes -> arrayRes.getName() + arrayRes.getArrayType() + arrayRes.getItems().size())).collect(Collectors.toList()));
+//                originDevice.setAllPlurals(originDevice.getAllPlurals().stream().filter(distinctByKey(pluralRes -> pluralRes.getName() + pluralRes.getItems().size())).collect(Collectors.toList()));
 
                 originDevice.setApps(apps);
             }

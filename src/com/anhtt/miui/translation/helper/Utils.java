@@ -21,6 +21,7 @@ import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -83,7 +84,7 @@ public class Utils {
         return string.length() == pos.getIndex();
     }
 
-    public static void writeStringsToFile(String path, List<StringRes> stringRes) {
+    public static void writeStringsToFile(String path, Map<String, StringRes> stringRes) {
         if (stringRes.size() == 0) return;
         try {
             File dir = new File(path);
@@ -97,7 +98,7 @@ public class Utils {
             Element root = document.createElement("resources");
             document.appendChild(root);
 
-            for (StringRes string : stringRes.stream().filter(distinctByKey(StringRes::getName)).collect(Collectors.toList())) {
+            for (StringRes string : stringRes.values().stream().filter(distinctByKey(StringRes::getName)).collect(Collectors.toList())) {
                 Element stringNode = document.createElement("string");
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());

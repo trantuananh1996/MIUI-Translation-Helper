@@ -34,6 +34,7 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -223,21 +224,21 @@ public class MainGUI extends JFrame {
             sourceDevices.forEach(sourceDevice -> {
                 sourceDevice.getApps().forEach(application -> {
                     if (cbFindFormatedString.isSelected()) {
-                        groupString(application.getName(), application.getWrongTranslatedOriginStrings(), sourceDevice, wrongApplications);
-                        groupArray(application.getName(), application.getWrongTranslatedOriginArrays(), sourceDevice, wrongApplications);
-                        groupPlural(application.getName(), application.getWrongTranslatedOriginPlurals(), sourceDevice, wrongApplications);
+                        groupString(application.getName(), application.getMapWrongTranslatedOriginStrings(), sourceDevice, wrongApplications);
+                        groupArray(application.getName(), application.getMapWrongTranslatedOriginArrays(), sourceDevice, wrongApplications);
+                        groupPlural(application.getName(), application.getMapWrongTranslatedOriginPlurals(), sourceDevice, wrongApplications);
                     }
 
                     if (cbFindUntranslated.isSelected()) {
-                        groupStringFromAll(application.getName(), application.getTranslatedFromOtherString(), sourceDevice, untranslatedFromAllApplications);
-                        groupString(application.getName(), application.getUnTranslatedStrings(), sourceDevice, untranslatedApplications);
-                        groupArrayFromAll(application.getName(), application.getTranslatedFromOtherArray(), sourceDevice, untranslatedFromAllApplications);
-                        groupArray(application.getName(), application.getUnTranslatedArrays(), sourceDevice, untranslatedApplications);
-                        groupPluralFromAll(application.getName(), application.getTranslatedFromOtherPlural(), sourceDevice, untranslatedFromAllApplications);
-                        groupPlural(application.getName(), application.getUnTranslatedPlurals(), sourceDevice, untranslatedApplications);
+                        groupStringFromAll(application.getName(), application.getMapTranslatedFromOtherString(), sourceDevice, untranslatedFromAllApplications);
+                        groupString(application.getName(), application.getMapUnTranslatedStrings(), sourceDevice, untranslatedApplications);
+                        groupArrayFromAll(application.getName(), application.getMapTranslatedFromOtherArray(), sourceDevice, untranslatedFromAllApplications);
+                        groupArray(application.getName(), application.getMapUnTranslatedArrays(), sourceDevice, untranslatedApplications);
+                        groupPluralFromAll(application.getName(), application.getMapTranslatedFromOtherPlural(), sourceDevice, untranslatedFromAllApplications);
+                        groupPlural(application.getName(), application.getMapUnTranslatedPlurals(), sourceDevice, untranslatedApplications);
                     }
                     if (cbFindCanRemove.isSelected())
-                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslatedStrings());
+                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getMapOriginEqualTranslatedStrings());
 
                 });
             });
@@ -274,81 +275,86 @@ public class MainGUI extends JFrame {
         }
     }
 
-    private void groupString(String appName, List<StringRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+    private void groupString(String appName, Map<String, StringRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        for (int i = 0; i < stringToGroups.size(); i++) {
-            StringRes origin = stringToGroups.get(i);
+        stringToGroups.forEach(new BiConsumer<String, StringRes>() {
+            @Override
+            public void accept(String s, StringRes origin) {
+                wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
+            }
+        });
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
+
+    private void groupStringFromAll(String appName, Map<String, StringRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        stringToGroups.forEach(new BiConsumer<String, StringRes>() {
+            @Override
+            public void accept(String s, StringRes origin) {
+                wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
+            }
+        });
+
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
+
+    private void groupArray(String appName, Map<String, ArrayRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        stringToGroups.values().forEach(origin -> {
             wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
-        }
+        });
+
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
-    private void groupStringFromAll(String appName, List<StringRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+    private void groupArrayFromAll(String appName, Map<String, ArrayRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        for (int i = 0; i < stringToGroups.size(); i++) {
-            StringRes origin = stringToGroups.get(i);
+        stringToGroups.values().forEach(origin -> {
             wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
-        }
+        });
+
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
-    private void groupArray(String appName, List<ArrayRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+    private void groupPlural(String appName, Map<String, PluralRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        for (int i = 0; i < stringToGroups.size(); i++) {
-            ArrayRes origin = stringToGroups.get(i);
+        stringToGroups.values().forEach(origin -> {
             wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
-        }
+
+        });
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
-    private void groupArrayFromAll(String appName, List<ArrayRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+    private void groupPluralFromAll(String appName, Map<String, PluralRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        for (int i = 0; i < stringToGroups.size(); i++) {
-            ArrayRes origin = stringToGroups.get(i);
+        stringToGroups.values().forEach(origin -> {
             wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
-        }
-        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
-    }
 
-    private void groupPlural(String appName, List<PluralRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
-        WrongApplication wrongApplication;
-        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
-            return wrong.getName().equals(appName);
-        }).findFirst();
-        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        for (int i = 0; i < stringToGroups.size(); i++) {
-            PluralRes origin = stringToGroups.get(i);
-            wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
-        }
-        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
-    }
-
-    private void groupPluralFromAll(String appName, List<PluralRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
-        WrongApplication wrongApplication;
-        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
-            return wrong.getName().equals(appName);
-        }).findFirst();
-        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        for (int i = 0; i < stringToGroups.size(); i++) {
-            PluralRes origin = stringToGroups.get(i);
-            wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
-        }
+        });
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
@@ -440,6 +446,7 @@ public class MainGUI extends JFrame {
         );
         return unTranslateables;
     }
+
     private List<SourceDevice> createDevices(StringWorker swingWorker, File sourceCompareFolder, TargetDevice targetDevice, List<SourceDevice> targetSeparateDevices) {
         File sourceDevicesFolder = new File(sourceCompareFolder.getAbsolutePath());
         if (!sourceDevicesFolder.exists()) new ArrayList<>();
@@ -520,7 +527,7 @@ public class MainGUI extends JFrame {
         targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false);
         if (targetDevice == null) return;
         targetDevice.getApps().forEach(application -> {
-            application.setDuplicateString(getDuplicates(application.getOriginString()));
+            application.setDuplicateString(getDuplicates(application.getMapOriginStrings()));
             if (application.getDuplicateString() == null || application.getDuplicateString().size() == 0) {
 //                logger.info("Không có trùng lặp");
             } else {
@@ -531,15 +538,15 @@ public class MainGUI extends JFrame {
         });
     }
 
-    public static List<StringRes> getDuplicates(final List<StringRes> personList) {
+    public static List<StringRes> getDuplicates(final Map<String, StringRes> personList) {
         return getDuplicatesMap(personList).values().stream()
                 .filter(duplicates -> duplicates.size() > 1)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }
 
-    private static Map<String, List<StringRes>> getDuplicatesMap(List<StringRes> personList) {
-        return personList.stream().collect(Collectors.groupingBy(StringRes::getName));
+    private static Map<String, List<StringRes>> getDuplicatesMap(Map<String, StringRes> personList) {
+        return personList.values().stream().collect(Collectors.groupingBy(StringRes::getName));
     }
 
 
