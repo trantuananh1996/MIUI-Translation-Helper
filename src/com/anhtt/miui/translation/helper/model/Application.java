@@ -14,13 +14,21 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class Application {
     private String name;
     private File translation;
+    Map<String, String> mapOriginStrings = new HashMap<>();
+    Map<String, String> maptranslatedStrings = new HashMap<>();//String đã dịch
+    Map<String, String> mapunTranslatedStrings = new HashMap<>();//String chưa dịch
+    Map<String, String> mapwrongTranslatedOriginStrings = new HashMap<>();//String gốc bị dịch sai
+    Map<String, String> mapwrongTranslatedStrings = new HashMap<>();//String bị dịch sai
+    Map<String, String> mapmightNotTranslatedStrings = new HashMap<>();//String giống nhau giữa gốc và dịch, có thể bỏ
+    Map<String, String> mapcanNotTranslateStrings = new HashMap<>();//String không thể dịch
+    Map<String, String> maporiginEqualTranslatedStrings = new HashMap<>();//Dịch giống gốc
+    Map<String, String> maptranslatedFromOtherString = new HashMap<>();//String đã dịch
+
     private List<StringRes> originStrings = new ArrayList<>();//String gốc của app
     private List<StringRes> translatedStrings = new ArrayList<>();//String đã dịch
     private List<StringRes> unTranslatedStrings = new ArrayList<>();//String chưa dịch
@@ -29,6 +37,7 @@ public class Application {
     private List<StringRes> mightNotTranslatedStrings = new ArrayList<>();//String giống nhau giữa gốc và dịch, có thể bỏ
     private List<StringRes> canNotTranslateStrings = new ArrayList<>();//String không thể dịch
     private List<StringRes> originEqualTranslatedStrings = new ArrayList<>();//Dịch giống gốc
+    private List<StringRes> translatedFromOtherString = new ArrayList<>();//String đã dịch
 
 
     private List<ArrayRes> originArrays = new ArrayList<>();
@@ -39,6 +48,7 @@ public class Application {
     private List<ArrayRes> mightNotTranslatedArrays = new ArrayList<>();//Array giống nhau giữa gốc và dịch, có thể bỏ
     private List<ArrayRes> canNotTranslateArrays = new ArrayList<>();//Array không thể dịch
     private List<ArrayRes> originEqualTranslatedArrays = new ArrayList<>();//Dịch giống gốc
+    private List<ArrayRes> translatedFromOtherArray = new ArrayList<>();//Dịch giống gốc
 
 
     private List<PluralRes> originPlurals = new ArrayList<>();
@@ -49,9 +59,22 @@ public class Application {
     private List<PluralRes> mightNotTranslatedPlurals = new ArrayList<>();//Plural giống nhau giữa gốc và dịch, có thể bỏ
     private List<PluralRes> canNotTranslatePlurals = new ArrayList<>();//Plural không thể dịch
     private List<PluralRes> originEqualTranslatedPlurals = new ArrayList<>();//Dịch giống gốc
+    private List<PluralRes> translatedFromOtherPlural = new ArrayList<>();//Dịch giống gốc
     private List<StringRes> duplicateString;
 
-    private List<PluralRes> getOriginPlurals() {
+    public List<StringRes> getTranslatedFromOtherString() {
+        return translatedFromOtherString;
+    }
+
+    public List<ArrayRes> getTranslatedFromOtherArray() {
+        return translatedFromOtherArray;
+    }
+
+    public List<PluralRes> getTranslatedFromOtherPlural() {
+        return translatedFromOtherPlural;
+    }
+
+    List<PluralRes> getOriginPlurals() {
         return originPlurals;
     }
 
@@ -185,6 +208,7 @@ public class Application {
     }
 
     private void createPluralList(boolean isApplyFilter) throws ParserConfigurationException, IOException, SAXException {
+//      System.out.println("createPluralList() called with: isApplyFilter = [" + isApplyFilter + "]");
         originPlurals = new ArrayList<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
@@ -197,8 +221,12 @@ public class Application {
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("plurals");
         for (int i = 0; i < list.getLength(); i++) {
+//            System.out.println("Process" + i);
             PluralRes stringRes = PluralRes.create((Element) list.item(i), isApplyFilter);
-            if (stringRes != null) originPlurals.add(stringRes);
+            if (stringRes != null) {
+//                System.out.println("Plural "+name+" - " + stringRes.getName());
+                originPlurals.add(stringRes);
+            }
         }
     }
 
@@ -238,7 +266,7 @@ public class Application {
         }
     }
 
-    public void compare(OriginDevice originDevice, Application specificedApp, Application translatedApp, TranslatedDevice transDevices) {
+    public void compare(SourceDevice sourceDevice, Application specificedApp, Application translatedApp, TargetDevice transDevices) {
         if (translatedApp == null) {
             if (SearchOptions.searchString) unTranslatedStrings.addAll(originStrings);
             if (SearchOptions.searchArray) unTranslatedArrays.addAll(originArrays);
@@ -256,42 +284,43 @@ public class Application {
 
     }
 
-    private void filterPlural(Application specificedApp, Application translatedApp, TranslatedDevice transDevices) {
-        originPlurals.forEach(arrayRes -> {
+    private void filterPlural(Application specificedApp, Application translatedApp, TargetDevice transDevices) {
+        originPlurals.forEach(originPlural -> {
             boolean canNotTranslate = MainGUI.unTranslateables.stream().anyMatch(unTranslateable -> {
                 return unTranslateable.getApplication().equals(getName())
-                        && unTranslateable.getName().equals(arrayRes.getName());
+                        && unTranslateable.getName().equals(originPlural.getName());
             });
 //            boolean isIgnored = MainGUI.autoIgnoredList.stream().anyMatch(unTranslateable -> {
 //                return unTranslateable.getApplication().equals(getName())
 //                        && unTranslateable.getName().equals(originPlural.getName());
 //            });
-            PluralRes translatedPlural = findTranslatedPlural(arrayRes, translatedApp, transDevices, false);
-            PluralRes specificPlural = findTranslatedPlural(arrayRes, specificedApp, transDevices, true);
+            PluralRes translatedPlural = findTranslatedPlural(originPlural, translatedApp, transDevices, false);
+            PluralRes specificPlural = findTranslatedPlural(originPlural, specificedApp, transDevices, true);
 
             if (canNotTranslate) {
-                //Nếu là Plural không thể dịch, mà đã có dịch rồi thì add vào
+                //Nếu là string không thể dịch, mà đã có dịch rồi thì add vào
                 if (translatedPlural != null) canNotTranslatePlurals.add(translatedPlural);
             } else {
-                if (translatedPlural == null) {//Chưa có dịch cho Plural này
+                if (translatedPlural == null) {//Chưa có dịch cho string này
                     if (specificPlural == null)
-                        unTranslatedPlurals.add(arrayRes);
+                        unTranslatedPlurals.add(originPlural);
                 } else {//Đã có dịch
-                    boolean isWrongTranslation = arrayRes.isWrongFormat(translatedPlural);
+                    boolean isWrongTranslation = originPlural.isWrongFormat(translatedPlural);
                     if (isWrongTranslation) {//Nếu là dịch sai
                         if (specificPlural != null) {//Dịch sai mà đã có dịch riêng biệt
-                            boolean isWrongSpecificTranslation = arrayRes.isWrongFormat(specificPlural);
+                            boolean isWrongSpecificTranslation = originPlural.isWrongFormat(specificPlural);
                             if (isWrongSpecificTranslation) {//Dịch riêng biệt cũng sai nốt
-                                wrongTranslatedOriginPlurals.add(arrayRes);
+                                wrongTranslatedOriginPlurals.add(originPlural);
                                 wrongTranslatedPlurals.add(translatedPlural);
                             }
                         } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
-                            wrongTranslatedOriginPlurals.add(arrayRes);
+                            wrongTranslatedOriginPlurals.add(originPlural);
                             wrongTranslatedPlurals.add(translatedPlural);
                         }
-                    } else if (arrayRes.equalsExact(translatedPlural)) {
+                    } else if (originPlural.getItems().equals(translatedPlural.getItems())
+                            && originPlural.getName().equals(translatedPlural.getName())) {
                         //Có dịch nhưng mà dịch cũng như ko vì nó giống nhau
-                        originEqualTranslatedPlurals.add(arrayRes);
+                        originEqualTranslatedPlurals.add(originPlural);
                     } else {
                         //Dịch rồi, mà lại còn đúng nữa thì làm gì ở đây nữa =))
                     }
@@ -300,42 +329,43 @@ public class Application {
         });
     }
 
-    private void filterArray(Application specificedApp, Application translatedApp, TranslatedDevice transDevices) {
-        originArrays.forEach(arrayRes -> {
+    private void filterArray(Application specificedApp, Application translatedApp, TargetDevice transDevices) {
+        originArrays.forEach(originArray -> {
             boolean canNotTranslate = MainGUI.unTranslateables.stream().anyMatch(unTranslateable -> {
                 return unTranslateable.getApplication().equals(getName())
-                        && unTranslateable.getName().equals(arrayRes.getName());
+                        && unTranslateable.getName().equals(originArray.getName());
             });
 //            boolean isIgnored = MainGUI.autoIgnoredList.stream().anyMatch(unTranslateable -> {
 //                return unTranslateable.getApplication().equals(getName())
 //                        && unTranslateable.getName().equals(originArray.getName());
 //            });
-            ArrayRes translatedArray = findTranslatedArray(arrayRes, translatedApp, transDevices, false);
-            ArrayRes specificArray = findTranslatedArray(arrayRes, specificedApp, transDevices, true);
+            ArrayRes translatedArray = findTranslatedArray(originArray, translatedApp, transDevices, false);
+            ArrayRes specificArray = findTranslatedArray(originArray, specificedApp, transDevices, true);
 
             if (canNotTranslate) {
-                //Nếu là Array không thể dịch, mà đã có dịch rồi thì add vào
+                //Nếu là string không thể dịch, mà đã có dịch rồi thì add vào
                 if (translatedArray != null) canNotTranslateArrays.add(translatedArray);
             } else {
-                if (translatedArray == null) {//Chưa có dịch cho Array này
+                if (translatedArray == null) {//Chưa có dịch cho string này
                     if (specificArray == null)
-                        unTranslatedArrays.add(arrayRes);
+                        unTranslatedArrays.add(originArray);
                 } else {//Đã có dịch
-                    boolean isWrongTranslation = arrayRes.isWrongFormat(translatedArray);
+                    boolean isWrongTranslation = originArray.isWrongFormat(translatedArray);
                     if (isWrongTranslation) {//Nếu là dịch sai
                         if (specificArray != null) {//Dịch sai mà đã có dịch riêng biệt
-                            boolean isWrongSpecificTranslation = arrayRes.isWrongFormat(specificArray);
+                            boolean isWrongSpecificTranslation = originArray.isWrongFormat(specificArray);
                             if (isWrongSpecificTranslation) {//Dịch riêng biệt cũng sai nốt
-                                wrongTranslatedOriginArrays.add(arrayRes);
+                                wrongTranslatedOriginArrays.add(originArray);
                                 wrongTranslatedArrays.add(translatedArray);
                             }
                         } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
-                            wrongTranslatedOriginArrays.add(arrayRes);
+                            wrongTranslatedOriginArrays.add(originArray);
                             wrongTranslatedArrays.add(translatedArray);
                         }
-                    } else if (arrayRes.equalsExact(translatedArray)) {
+                    } else if (originArray.getItems().equals(translatedArray.getItems())
+                            && originArray.getName().equals(translatedArray.getName())) {
                         //Có dịch nhưng mà dịch cũng như ko vì nó giống nhau
-                        originEqualTranslatedArrays.add(arrayRes);
+                        originEqualTranslatedArrays.add(originArray);
                     } else {
                         //Dịch rồi, mà lại còn đúng nữa thì làm gì ở đây nữa =))
                     }
@@ -345,7 +375,7 @@ public class Application {
 
     }
 
-    private void filterString(Application specificedApp, Application translatedApp, TranslatedDevice transDevices) {
+    private void filterString(Application specificedApp, Application translatedApp, TargetDevice transDevices) {
         originStrings.forEach(originString -> {
             boolean canNotTranslate = MainGUI.unTranslateables.stream().anyMatch(unTranslateable -> {
                 return unTranslateable.getApplication().equals(getName())
@@ -390,27 +420,84 @@ public class Application {
         });
     }
 
-    private PluralRes findTranslatedPlural(PluralRes arrayRes, Application translatedApp, TranslatedDevice transDevices, boolean isSpecific) {
+    private PluralRes findTranslatedPlural(PluralRes originPlural, Application translatedApp, TargetDevice transDevices, boolean isSpecific) {
+//        if (translatedApp == null) return null;
+//        List<PluralRes> pluralToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllPlurals() : translatedApp.getOriginPlurals();
+//        Optional<PluralRes> hasTranslated = pluralToStream.stream().filter(stringRes -> arrayRes.getName().equals(stringRes.getName())).findFirst();
+//        return hasTranslated.orElse(null);
+
+
         if (translatedApp == null) return null;
-        List<PluralRes> pluralToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllPlurals() : translatedApp.getOriginPlurals();
-        Optional<PluralRes> hasTranslated = pluralToStream.stream().filter(stringRes -> arrayRes.getName().equals(stringRes.getName())).findFirst();
-        return hasTranslated.orElse(null);
+//        List<PluralRes> stringToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllPlurals() : translatedApp.getOriginPlural();
+        Optional<PluralRes> hasTranslated = translatedApp.getOriginPlurals().stream().filter(stringRes -> originPlural.getName().equals(stringRes.getName())).findFirst();
+
+        Optional<PluralRes> hasTranslatedInAll = transDevices.getAllPlurals().stream().filter(stringRes -> originPlural.getName().equals(stringRes.getName())).findFirst();
+        PluralRes result;
+        if (!isSpecific)
+            result = hasTranslated.orElse(!hasTranslatedInAll.isPresent() ? null : hasTranslatedInAll.orElse(null));
+        else result = hasTranslated.orElse(null);
+
+        if (!isSpecific && !hasTranslated.isPresent() && hasTranslatedInAll.isPresent()) {
+            if (!hasTranslatedInAll.get().getName().contains("app_name") && !originPlural.isWrongFormat(hasTranslatedInAll.get())) {
+                Optional<UnTranslateable> unTranslateable = MainGUI.unTranslateables.stream().filter(unTranslateable1 -> {
+                    return unTranslateable1.getFile().equals("plurals.xml")
+                            && unTranslateable1.getApplication().equals(name)
+                            && unTranslateable1.getName().equals(hasTranslatedInAll.get().getName());
+                }).findFirst();
+                if (!unTranslateable.isPresent()) translatedFromOtherPlural.add(hasTranslatedInAll.get());
+            }
+        }
+        return result;
     }
 
-    private ArrayRes findTranslatedArray(ArrayRes arrayRes, Application translatedApp, TranslatedDevice transDevices, boolean isSpecific) {
+    private ArrayRes findTranslatedArray(ArrayRes originArray, Application translatedApp, TargetDevice transDevices, boolean isSpecific) {
         if (translatedApp == null) return null;
-        List<ArrayRes> arrayToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllArrays() : translatedApp.getOriginArrays();
-        Optional<ArrayRes> hasTranslated = arrayToStream.stream().filter(stringRes -> arrayRes.getName().equals(stringRes.getName())).findFirst();
-        return hasTranslated.orElse(null);
+//        List<ArrayRes> stringToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllArrays() : translatedApp.getOriginArray();
+        Optional<ArrayRes> hasTranslated = translatedApp.getOriginArrays().stream().filter(stringRes -> originArray.getName().equals(stringRes.getName())).findFirst();
+
+        Optional<ArrayRes> hasTranslatedInAll = transDevices.getAllArrays().stream().filter(stringRes -> originArray.getName().equals(stringRes.getName())).findFirst();
+        ArrayRes result;
+        if (!isSpecific)
+            result = hasTranslated.orElse(!hasTranslatedInAll.isPresent() ? null : hasTranslatedInAll.orElse(null));
+        else result = hasTranslated.orElse(null);
+
+        if (!isSpecific && !hasTranslated.isPresent() && hasTranslatedInAll.isPresent()) {
+            if (!hasTranslatedInAll.get().getName().contains("app_name") && !originArray.isWrongFormat(hasTranslatedInAll.get())) {
+                Optional<UnTranslateable> unTranslateable = MainGUI.unTranslateables.stream().filter(unTranslateable1 -> {
+                    return unTranslateable1.getFile().equals("arrays.xml")
+                            && unTranslateable1.getApplication().equals(name)
+                            && unTranslateable1.getName().equals(hasTranslatedInAll.get().getName());
+                }).findFirst();
+                if (!unTranslateable.isPresent()) translatedFromOtherArray.add(hasTranslatedInAll.get());
+            }
+        }
+        return result;
     }
 
 
     @Nullable
-    private StringRes findTranslatedString(StringRes originString, Application translatedApp, TranslatedDevice transDevices, boolean isSpecific) {
+    private StringRes findTranslatedString(StringRes originString, Application translatedApp, TargetDevice transDevices, boolean isSpecific) {
         if (translatedApp == null) return null;
-        List<StringRes> stringToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllStrings() : translatedApp.getOriginString();
-        Optional<StringRes> hasTranslated = stringToStream.stream().filter(stringRes -> originString.getName().equals(stringRes.getName())).findFirst();
-        return hasTranslated.orElse(null);
+//        List<StringRes> stringToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllStrings() : translatedApp.getOriginString();
+        Optional<StringRes> hasTranslated = translatedApp.getOriginString().stream().filter(stringRes -> originString.getName().equals(stringRes.getName())).findFirst();
+
+        Optional<StringRes> hasTranslatedInAll = transDevices.getAllStrings().stream().filter(stringRes -> originString.getName().equals(stringRes.getName())).findFirst();
+        StringRes result;
+        if (!isSpecific)
+            result = hasTranslated.orElse(!hasTranslatedInAll.isPresent() ? null : hasTranslatedInAll.orElse(null));
+        else result = hasTranslated.orElse(null);
+
+        if (!isSpecific && !hasTranslated.isPresent() && hasTranslatedInAll.isPresent()) {
+            if (!hasTranslatedInAll.get().getName().contains("app_name") && !originString.isWrongFormat(hasTranslatedInAll.get())) {
+                Optional<UnTranslateable> unTranslateable = MainGUI.unTranslateables.stream().filter(unTranslateable1 -> {
+                    return unTranslateable1.getFile().equals("strings.xml")
+                            && unTranslateable1.getApplication().equals(name)
+                            && unTranslateable1.getName().equals(hasTranslatedInAll.get().getName());
+                }).findFirst();
+                if (!unTranslateable.isPresent()) translatedFromOtherString.add(hasTranslatedInAll.get());
+            }
+        }
+        return result;
     }
 
     public List<StringRes> getOriginString() {
@@ -436,6 +523,7 @@ public class Application {
     public List<StringRes> getDuplicateString() {
         return duplicateString;
     }
+
     @Override
     public String toString() {
         return name;

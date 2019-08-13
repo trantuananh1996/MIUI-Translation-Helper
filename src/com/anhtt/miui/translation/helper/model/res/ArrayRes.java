@@ -35,7 +35,7 @@ public class ArrayRes implements Resource<ArrayRes> {
     }
 
     @Nullable
-    public static ArrayRes create(Element element, boolean isApplyFilter) {
+    public static ArrayRes create(Node element, boolean isApplyFilter) {
         String name = "";
         String arrayType = "";
 
@@ -97,7 +97,13 @@ public class ArrayRes implements Resource<ArrayRes> {
 
     @Override
     public boolean isWrongFormat(ArrayRes other) {
+        if (items.size() != other.items.size()) return true;
+        for (int i = 0; i < items.size(); i++) {
+            boolean b = items.get(i).isWrongFormat(other.items.get(i));
+            if (b) return true;
+        }
         return false;
+
     }
 
     public String getName() {

@@ -31,7 +31,6 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
@@ -43,14 +42,15 @@ import java.util.stream.Collectors;
  */
 public class MainGUI extends JFrame {
 
-    TranslatedDevice transDevices;
-    List<OriginDevice> originDevices;
-    List<OriginDevice> specificOriginDevices;
+    TargetDevice targetDevice;
+    List<SourceDevice> sourceDevices;
+    List<SourceDevice> targetSeparateSourceDevices;
     public static List<UnTranslateable> unTranslateables;
     public static List<UnTranslateable> autoIgnoredList;
     StringWorker worker;
     public List<WrongApplication> wrongApplications = new ArrayList<>();
     public List<WrongApplication> untranslatedApplications = new ArrayList<>();
+    public List<WrongApplication> untranslatedFromAllApplications = new ArrayList<>();
     Logger logger = Logger.getLogger("Log");
 
     public MainGUI() {
@@ -166,20 +166,20 @@ public class MainGUI extends JFrame {
     }
 
     void deleteDirectoryStream(Path path) throws IOException {
-        Files.walk(path)
-                .sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
+//        Files.walk(path)
+//                .sorted(Comparator.reverseOrder())
+//                .map(Path::toFile)
+//                .forEach(File::delete);
     }
 
     public final class StringWorker extends SwingWorker<String, String> {
-        File originFolder;
-        File translationFolder;
+        File sourceCompareFolder;
+        File targetLangFolder;
         File filteredFolder;
 
-        public StringWorker(File originFolder, File translationFolder, File filteredFolder) {
-            this.originFolder = originFolder;
-            this.translationFolder = translationFolder;
+        public StringWorker(File sourceCompareFolder, File targetLangFolder, File filteredFolder) {
+            this.sourceCompareFolder = sourceCompareFolder;
+            this.targetLangFolder = targetLangFolder;
             this.filteredFolder = filteredFolder;
         }
 
@@ -203,51 +203,58 @@ public class MainGUI extends JFrame {
             }
 
 
-            File transDevicesFolder = new File(translationFolder.getAbsolutePath() + "\\main");
-            if (!transDevicesFolder.exists()) return null;
-            transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
+            File targetDeviceFolder = new File(targetLangFolder.getAbsolutePath() + "\\main");
+            if (!targetDeviceFolder.exists()) return null;
+            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false);
 
 
-            File specificDevicesFolder = new File(translationFolder.getAbsolutePath() + "\\device");
-            specificOriginDevices = new ArrayList<>();
+            File specificDevicesFolder = new File(targetLangFolder.getAbsolutePath() + "\\device");
+            targetSeparateSourceDevices = new ArrayList<>();
             for (File file : Objects.requireNonNull(specificDevicesFolder.listFiles())) {
                 if (file.isDirectory()) {
-                    OriginDevice originDevice = OriginDevice.create(file.getAbsolutePath());
-                    if (originDevice != null) specificOriginDevices.add(originDevice);
+                    SourceDevice sourceDevice = SourceDevice.create(file.getAbsolutePath());
+                    if (sourceDevice != null) targetSeparateSourceDevices.add(sourceDevice);
                 }
             }
 
-            originDevices = createOriginDevices(this, originFolder, transDevices, specificOriginDevices);
+            sourceDevices = createDevices(this, sourceCompareFolder, targetDevice, targetSeparateSourceDevices);
 
 
-            originDevices.forEach(originDevice -> {
-                originDevice.getApps().forEach(application -> {
+            sourceDevices.forEach(sourceDevice -> {
+                sourceDevice.getApps().forEach(application -> {
                     if (cbFindFormatedString.isSelected()) {
-                        groupString(application.getName(), application.getWrongTranslatedOriginStrings(), originDevice, wrongApplications);
-                        groupArray(application.getName(), application.getWrongTranslatedOriginArrays(), originDevice, wrongApplications);
-                        groupPlural(application.getName(), application.getWrongTranslatedOriginPlurals(), originDevice, wrongApplications);
+                        groupString(application.getName(), application.getWrongTranslatedOriginStrings(), sourceDevice, wrongApplications);
+                        groupArray(application.getName(), application.getWrongTranslatedOriginArrays(), sourceDevice, wrongApplications);
+                        groupPlural(application.getName(), application.getWrongTranslatedOriginPlurals(), sourceDevice, wrongApplications);
                     }
 
                     if (cbFindUntranslated.isSelected()) {
-                        groupString(application.getName(), application.getUnTranslatedStrings(), originDevice, untranslatedApplications);
-                        groupArray(application.getName(), application.getUnTranslatedArrays(), originDevice, untranslatedApplications);
-                        groupPlural(application.getName(), application.getWrongTranslatedOriginPlurals(), originDevice, wrongApplications);
+                        groupStringFromAll(application.getName(), application.getTranslatedFromOtherString(), sourceDevice, untranslatedFromAllApplications);
+                        groupString(application.getName(), application.getUnTranslatedStrings(), sourceDevice, untranslatedApplications);
+                        groupArrayFromAll(application.getName(), application.getTranslatedFromOtherArray(), sourceDevice, untranslatedFromAllApplications);
+                        groupArray(application.getName(), application.getUnTranslatedArrays(), sourceDevice, untranslatedApplications);
+                        groupPluralFromAll(application.getName(), application.getTranslatedFromOtherPlural(), sourceDevice, untranslatedFromAllApplications);
+                        groupPlural(application.getName(), application.getUnTranslatedPlurals(), sourceDevice, untranslatedApplications);
                     }
                     if (cbFindCanRemove.isSelected())
-                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + originDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslatedStrings());
+                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getOriginEqualTranslatedStrings());
 
                 });
             });
 
             if (cbFindFormatedString.isSelected()) {
                 Utils.writeWrongToFile(filteredFolder.getAbsolutePath() + "\\Wrongs", wrongApplications);
-                Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\WrongArray", wrongApplications);
+                Utils.writeWrongArrayToFile(filteredFolder.getAbsolutePath() + "\\WrongArray", wrongApplications);
+                Utils.writeWrongPluralToFile(filteredFolder.getAbsolutePath() + "\\WrongPlural", wrongApplications);
 
             }
             if (cbFindUntranslated.isSelected()) {
                 Utils.writeUnTranslatedStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslated", untranslatedApplications);
+                Utils.writeUnTranslatedFromAllStringToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedFromOther", untranslatedFromAllApplications);
                 Utils.writeUnTranslatedArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArray", untranslatedApplications);
+                Utils.writeUnTranslatedFromAllArrayToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedArrayFromOther", untranslatedFromAllApplications);
                 Utils.writeUnTranslatedPluralToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedPlural", untranslatedApplications);
+                Utils.writeUnTranslatedFromAllPluralToFile(filteredFolder.getAbsolutePath() + "\\UnTranslatedPluralFromOther", untranslatedFromAllApplications);
 
             }
             return null;
@@ -267,7 +274,7 @@ public class MainGUI extends JFrame {
         }
     }
 
-    private void groupString(String appName, List<StringRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
+    private void groupString(String appName, List<StringRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
@@ -275,12 +282,25 @@ public class MainGUI extends JFrame {
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
         for (int i = 0; i < stringToGroups.size(); i++) {
             StringRes origin = stringToGroups.get(i);
-            wrongApplication.addOrigin(originDevices.size(), originDevice, origin);
+            wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
-    private void groupArray(String appName, List<ArrayRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
+    private void groupStringFromAll(String appName, List<StringRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        for (int i = 0; i < stringToGroups.size(); i++) {
+            StringRes origin = stringToGroups.get(i);
+            wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
+        }
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
+
+    private void groupArray(String appName, List<ArrayRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
@@ -288,12 +308,25 @@ public class MainGUI extends JFrame {
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
         for (int i = 0; i < stringToGroups.size(); i++) {
             ArrayRes origin = stringToGroups.get(i);
-            wrongApplication.addOrigin(originDevices.size(), originDevice, origin);
+            wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
-    private void groupPlural(String appName, List<PluralRes> stringToGroups, OriginDevice originDevice, List<WrongApplication> wrongApplications) {
+    private void groupArrayFromAll(String appName, List<ArrayRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        for (int i = 0; i < stringToGroups.size(); i++) {
+            ArrayRes origin = stringToGroups.get(i);
+            wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
+        }
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
+
+    private void groupPlural(String appName, List<PluralRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
         WrongApplication wrongApplication;
         Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
             return wrong.getName().equals(appName);
@@ -301,7 +334,20 @@ public class MainGUI extends JFrame {
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
         for (int i = 0; i < stringToGroups.size(); i++) {
             PluralRes origin = stringToGroups.get(i);
-            wrongApplication.addOrigin(originDevices.size(), originDevice, origin);
+            wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
+        }
+        if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
+    }
+
+    private void groupPluralFromAll(String appName, List<PluralRes> stringToGroups, SourceDevice sourceDevice, List<WrongApplication> wrongApplications) {
+        WrongApplication wrongApplication;
+        Optional<WrongApplication> wrongApplication1 = wrongApplications.stream().filter(wrong -> {
+            return wrong.getName().equals(appName);
+        }).findFirst();
+        wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
+        for (int i = 0; i < stringToGroups.size(); i++) {
+            PluralRes origin = stringToGroups.get(i);
+            wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
         }
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
@@ -394,18 +440,17 @@ public class MainGUI extends JFrame {
         );
         return unTranslateables;
     }
-
-    private List<OriginDevice> createOriginDevices(StringWorker swingWorker, File originFolder, TranslatedDevice transDevices, List<OriginDevice> specificOriginDevices) {
-        File originDevices = new File(originFolder.getAbsolutePath());
-        if (!originDevices.exists()) new ArrayList<>();
-        List<OriginDevice> devices = new ArrayList<>();
-        for (File file : Objects.requireNonNull(originDevices.listFiles())) {
+    private List<SourceDevice> createDevices(StringWorker swingWorker, File sourceCompareFolder, TargetDevice targetDevice, List<SourceDevice> targetSeparateDevices) {
+        File sourceDevicesFolder = new File(sourceCompareFolder.getAbsolutePath());
+        if (!sourceDevicesFolder.exists()) new ArrayList<>();
+        List<SourceDevice> sourceDevices = new ArrayList<>();
+        for (File file : Objects.requireNonNull(sourceDevicesFolder.listFiles())) {
             if (file.isDirectory()) {
-                OriginDevice originDevice = OriginDevice.create(swingWorker, file.getAbsolutePath(), transDevices, specificOriginDevices);
-                if (originDevice != null) devices.add(originDevice);
+                SourceDevice sourceDevice = SourceDevice.create(swingWorker, file.getAbsolutePath(), targetDevice, targetSeparateDevices);
+                if (sourceDevice != null) sourceDevices.add(sourceDevice);
             }
         }
-        return devices;
+        return sourceDevices;
     }
 
 
@@ -472,9 +517,9 @@ public class MainGUI extends JFrame {
         logger.info("Kiểm tra trùng lặp");
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
-        transDevices = TranslatedDevice.create(transDevicesFolder.getAbsolutePath(), false);
-        if (transDevices == null) return;
-        transDevices.getApps().forEach(application -> {
+        targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false);
+        if (targetDevice == null) return;
+        targetDevice.getApps().forEach(application -> {
             application.setDuplicateString(getDuplicates(application.getOriginString()));
             if (application.getDuplicateString() == null || application.getDuplicateString().size() == 0) {
 //                logger.info("Không có trùng lặp");
@@ -560,7 +605,7 @@ public class MainGUI extends JFrame {
 
     private void btnViewDuplicateMouseClicked(MouseEvent e) {
         JFrame f = new JFrame("Trùng");
-        List<Application> applications = transDevices.getApps().stream().filter(application -> application.getDuplicateString() != null && application.getDuplicateString().size() > 0).collect(Collectors.toList());
+        List<Application> applications = targetDevice.getApps().stream().filter(application -> application.getDuplicateString() != null && application.getDuplicateString().size() > 0).collect(Collectors.toList());
         JList<Application> list = new JList(applications.toArray());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         list.addMouseListener(new MouseAdapter() {
@@ -571,7 +616,7 @@ public class MainGUI extends JFrame {
                     int index = list.locationToIndex(evt.getPoint());
                     logger.info("Converting " + applications.get(index).getName());
                     try {
-                        Desktop.getDesktop().open(new File(checkTranslationFolder(edtTranslatedFolder.getText()).getAbsolutePath()+"\\main\\"+applications.get(index).getName()));
+                        Desktop.getDesktop().open(new File(checkTranslationFolder(edtTranslatedFolder.getText()).getAbsolutePath() + "\\main\\" + applications.get(index).getName()));
                     } catch (IOException e1) {
                         e1.printStackTrace();
                     }
@@ -633,24 +678,29 @@ public class MainGUI extends JFrame {
 
         // JFormDesigner evaluation mark
         setBorder(new javax.swing.border.CompoundBorder(
-            new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                java.awt.Color.red), getBorder())); addPropertyChangeListener(new java.beans.PropertyChangeListener(){public void propertyChange(java.beans.PropertyChangeEvent e){if("border".equals(e.getPropertyName()))throw new RuntimeException();}});
+                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
+                        "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
+                        javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
+                        java.awt.Color.red), getBorder()));
+        addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            public void propertyChange(java.beans.PropertyChangeEvent e) {
+                if ("border".equals(e.getPropertyName())) throw new RuntimeException();
+            }
+        });
 
         setLayout(new BorderLayout());
 
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                "5dlu, $lcgap, 402dlu, $lcgap",
-                "2*(default, $lgap), default"));
+                    "5dlu, $lcgap, 402dlu, $lcgap",
+                    "2*(default, $lgap), default"));
 
             //======== panel3 ========
             {
                 panel3.setLayout(new FormLayout(
-                    "default, $lcgap, 275dlu, $lcgap, 26dlu",
-                    "3*(default, $lgap), default"));
+                        "default, $lcgap, 275dlu, $lcgap, 26dlu",
+                        "3*(default, $lgap), default"));
 
                 //---- label2 ----
                 label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
@@ -717,17 +767,17 @@ public class MainGUI extends JFrame {
             //======== panel4 ========
             {
                 panel4.setLayout(new FormLayout(
-                    "8*(default, $lcgap), default",
-                    "default"));
+                        "8*(default, $lcgap), default",
+                        "default"));
 
                 //======== panel7 ========
                 {
                     panel7.setBorder(new CompoundBorder(
-                        new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
-                        Borders.DLU2));
+                            new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
+                            Borders.DLU2));
                     panel7.setLayout(new FormLayout(
-                        "42dlu",
-                        "2*(default, $lgap), default"));
+                            "42dlu",
+                            "2*(default, $lgap), default"));
 
                     //---- cbString ----
                     cbString.setText("string");
@@ -750,8 +800,8 @@ public class MainGUI extends JFrame {
                 {
                     panel8.setBorder(new TitledBorder("T\u00f9y ch\u1ecdn"));
                     panel8.setLayout(new FormLayout(
-                        "default",
-                        "4*(default, $lgap), default"));
+                            "default",
+                            "4*(default, $lgap), default"));
 
                     //---- cbFindFormatedString ----
                     cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
@@ -788,14 +838,14 @@ public class MainGUI extends JFrame {
                 {
                     panel5.setBorder(new TitledBorder("H\u00e0nh \u0111\u1ed9ng"));
                     panel5.setLayout(new FormLayout(
-                        "101dlu, $lcgap, 84dlu",
-                        "3*(default, $lgap), default"));
+                            "101dlu, $lcgap, 84dlu",
+                            "3*(default, $lgap), default"));
 
                     //======== panel2 ========
                     {
                         panel2.setLayout(new FormLayout(
-                            "51dlu, $lcgap, 46dlu",
-                            "default"));
+                                "51dlu, $lcgap, 46dlu",
+                                "default"));
 
                         //---- btnStart ----
                         btnStart.setText("B\u1eaft \u0111\u1ea7u");
@@ -888,8 +938,8 @@ public class MainGUI extends JFrame {
                 panelLog.setBorder(new TitledBorder("Log"));
                 panelLog.setPreferredSize(new Dimension(666, 200));
                 panelLog.setLayout(new FormLayout(
-                    "393dlu",
-                    "106dlu"));
+                        "393dlu",
+                        "106dlu"));
 
                 //======== scrollPane1 ========
                 {

@@ -14,7 +14,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-public class TranslatedDevice {
+public class TargetDevice {
     private String name;
     private File translation;
     private List<Application> apps;
@@ -46,7 +46,7 @@ public class TranslatedDevice {
         this.allArrays = allArrays;
     }
 
-    public TranslatedDevice(String name, File translation) {
+    public TargetDevice(String name, File translation) {
         this.name = name;
         this.translation = translation;
     }
@@ -66,15 +66,16 @@ public class TranslatedDevice {
         return null;
     }
 
+
     @Nullable
-    public static TranslatedDevice create(String path, boolean isApplyFilter) {
+    public static TargetDevice create(String path, boolean isApplyFilter) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
         File file = new File(path);
 
         if (file.exists()) {
-            TranslatedDevice originDevice = new TranslatedDevice(deviceName, file);
+            TargetDevice originDevice = new TargetDevice(deviceName, file);
             File[] child = file.listFiles();
             if (child != null) {
                 List<Application> apps = new ArrayList<>();
@@ -85,11 +86,14 @@ public class TranslatedDevice {
                             apps.add(app);
                             originDevice.getAllStrings().addAll(app.getOriginString());
                             originDevice.getAllArrays().addAll(app.getOriginArrays());
+                            originDevice.getAllPlurals().addAll(app.getOriginPlurals());
                         }
                     }
                 }
                 originDevice.setAllStrings(originDevice.getAllStrings().stream().filter(distinctByKey(stringRes -> stringRes.getName() + stringRes.getValue())).collect(Collectors.toList()));
-                originDevice.setAllArrays(originDevice.getAllArrays().stream().filter(distinctByKey(ArrayRes::getName)).collect(Collectors.toList()));
+                originDevice.setAllArrays(originDevice.getAllArrays().stream().filter(distinctByKey(arrayRes -> arrayRes.getName() + arrayRes.getArrayType() + arrayRes.getItems().size())).collect(Collectors.toList()));
+                originDevice.setAllPlurals(originDevice.getAllPlurals().stream().filter(distinctByKey(pluralRes -> pluralRes.getName() + pluralRes.getItems().size())).collect(Collectors.toList()));
+
                 originDevice.setApps(apps);
             }
 

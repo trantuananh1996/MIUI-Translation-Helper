@@ -2,6 +2,7 @@ package com.anhtt.miui.translation.helper.model.res;
 
 import com.anhtt.miui.translation.helper.Utils;
 import com.sun.istack.internal.Nullable;
+import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -33,7 +34,6 @@ public class StringRes implements Resource<StringRes> {
             t.setOutputProperty(OutputKeys.INDENT, "yes");
             t.transform(new DOMSource(node), new StreamResult(sw));
         } catch (TransformerException te) {
-            System.out.println("nodeToString Transformer Exception");
         }
         return sw.toString();
     }
@@ -65,6 +65,7 @@ public class StringRes implements Resource<StringRes> {
                     || name.contains("country_name")
                     || name.contains("alisdk_message")
                     || name.contains("com_taobao_tae_sdk")
+                    || name.contains("msp_")
                     || value.contains("@string/")
                     || value.contains("@android:string/")
                     || value.contains("sans-serif")
@@ -138,6 +139,14 @@ public class StringRes implements Resource<StringRes> {
         if (count(this, "%3$d") != count(other, "%3$d"))
             return true;
         if (count(this, "%3$s") != count(other, "%3$s"))
+            return true;
+        if (count(this, "%4$d") != count(other, "%4$d"))
+            return true;
+        if (count(this, "%4$s") != count(other, "%4$s"))
+            return true;
+        if (count(this, "%5$d") != count(other, "%5$d"))
+            return true;
+        if (count(this, "%5$s") != count(other, "%5$s"))
             return true;
         return false;
     }

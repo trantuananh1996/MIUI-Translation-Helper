@@ -10,6 +10,7 @@ import org.w3c.dom.NodeList;
 import javax.xml.bind.JAXBContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static com.anhtt.miui.translation.helper.Utils.isNumeric;
 
@@ -18,7 +19,7 @@ public class PluralRes implements Resource<PluralRes> {
     private String arrayType;
     private List<Item> items = new ArrayList<>();
 
-    private void setItems(List<Item> items) {
+    public void setItems(List<Item> items) {
         this.items = items;
     }
 
@@ -36,7 +37,7 @@ public class PluralRes implements Resource<PluralRes> {
     }
 
     @Nullable
-    public static PluralRes create(Element element, boolean isApplyFilter) {
+    public static PluralRes create(Node element, boolean isApplyFilter) {
         String name = "";
         String arrayType = "";
 
@@ -66,27 +67,27 @@ public class PluralRes implements Resource<PluralRes> {
             Node child = list.item(i);
             if (child.getNodeName().equals("item")) {
                 String quantity = "";
-                NamedNodeMap attrs = element.getAttributes();
+                NamedNodeMap attrs = child.getAttributes();
                 for (int j = 0; j < attrs.getLength(); j++) {
                     Node attr = attrs.item(j);
                     if (attr.getNodeName().equals("quantity"))
-                        name = attr.getNodeValue();
+                        quantity = attr.getNodeValue();
                 }
-                items.add(new Item(Utils.nodeToString(child),quantity));
+                items.add(new Item(Utils.nodeToString(child), quantity));
             }
         }
-        //Bỏ qua nếu tất cả là số hoặc string res; tất cả là package name dạng com.abc
-        if (isApplyFilter) if (items.stream().allMatch(item -> item.getValue().contains("string/")
-                || item.getValue().contains("android:string/")
-                || isNumeric(item.getValue())
-                || item.getValue().contains("drawable/")
-                || item.getValue().contains("android:drawable/"))
-
-                || items.stream().allMatch(item -> item.getValue().contains("com.") && !item.getValue().contains(" "))
-                || items.stream().allMatch(item -> item.getValue().length() > 15 && !item.getValue().contains(" "))
-                || items.stream().allMatch(item -> item.getValue().equals("%1$s"))
-
-        ) return null;
+//        //Bỏ qua nếu tất cả là số hoặc string res; tất cả là package name dạng com.abc
+//        if (isApplyFilter) if (items.stream().allMatch(item -> item.getValue().contains("string/")
+//                || item.getValue().contains("android:string/")
+//                || isNumeric(item.getValue())
+//                || item.getValue().contains("drawable/")
+//                || item.getValue().contains("android:drawable/"))
+//
+//                || items.stream().allMatch(item -> item.getValue().contains("com.") && !item.getValue().contains(" "))
+//                || items.stream().allMatch(item -> item.getValue().length() > 15 && !item.getValue().contains(" "))
+//                || items.stream().allMatch(item -> item.getValue().equals("%1$s"))
+//
+//        ) return null;
 
 
         if (arrayType != null && arrayType.length() > 0) {
@@ -105,6 +106,21 @@ public class PluralRes implements Resource<PluralRes> {
 
     @Override
     public boolean isWrongFormat(PluralRes other) {
+        if (items.size() > other.items.size()) {
+            return isWrongFormat(items, other.items);
+        } else {
+            return isWrongFormat(other.items, items);
+        }
+    }
+
+    private boolean isWrongFormat(List<Item> bigger, List<Item> smaller) {
+        for (Item current : bigger) {
+            Optional<Item> other = smaller.stream().filter(item -> item.getQuantity().equals(current.getQuantity())).findFirst();
+            if (other.isPresent()) {
+                boolean b = current.isWrongFormat(other.get());
+                if (b) return true;
+            }
+        }
         return false;
     }
 
