@@ -199,7 +199,7 @@ public class Utils {
 
     public static void writeUnTranslatedStringToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
-            if (!isIgnoredApplication(wrongApplication.getName()))
+//            if (!isIgnoredApplication(wrongApplication.getName()))
                 writeUnTranslatedStringToFile(absolutePath, wrongApplication);
         }
     }
@@ -314,7 +314,7 @@ public class Utils {
     }
 
     public static void writeWrongArrayToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOriginArrays().size() == 0) return;
+        if (wrongApplication.getMapWrongTranslatedOriginArrays().size() == 0) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -331,7 +331,7 @@ public class Utils {
             Element specificRoot = document.createElement("specificDevice");
             root.appendChild(specificRoot);
 
-            for (WrongArrayRes string : wrongApplication.getWrongTranslatedOriginArrays().stream().filter(distinctByKey(WrongArrayRes::getName)).collect(Collectors.toList())) {
+            for (WrongArrayRes string : wrongApplication.getMapWrongTranslatedOriginArrays().values().stream().filter(distinctByKey(WrongArrayRes::getName)).collect(Collectors.toList())) {
                 if (!string.getDevices().contains("all")) {
                     Element stringNode = document.createElement("string-array");
                     specificRoot.appendChild(stringNode);
@@ -479,7 +479,7 @@ public class Utils {
     }
 
     public static void writeUnTranslatedArrayToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOriginArrays().size() == 0) return;
+        if (wrongApplication.getMapWrongTranslatedOriginArrays().size() == 0) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -492,7 +492,7 @@ public class Utils {
             Element root = document.createElement("resources");
             document.appendChild(root);
 
-            for (WrongArrayRes string : wrongApplication.getWrongTranslatedOriginArrays().stream().filter(distinctByKey(WrongArrayRes::getName)).collect(Collectors.toList())) {
+            for (WrongArrayRes string : wrongApplication.getMapWrongTranslatedOriginArrays().values().stream().filter(distinctByKey(WrongArrayRes::getName)).collect(Collectors.toList())) {
                 Element stringNode = document.createElement(string.getArrayType());
                 root.appendChild(stringNode);
                 stringNode.setAttribute("name", string.getName());
@@ -738,7 +738,7 @@ public class Utils {
                 item.setAttribute("file", "strings.xml");
                 item.setAttribute("name", string.getName());
             }
-            for (WrongArrayRes string : wrongApplication.getWrongTranslatedOriginArrays()) {
+            for (WrongArrayRes string : wrongApplication.getMapWrongTranslatedOriginArrays().values()) {
                 Element item = doc.createElement("item");
                 root.appendChild(item);
                 item.setAttribute("folder", "all");

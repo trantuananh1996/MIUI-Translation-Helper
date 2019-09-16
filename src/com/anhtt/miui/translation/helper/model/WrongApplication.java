@@ -4,9 +4,7 @@ import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public class WrongApplication {
     private String name;
@@ -14,7 +12,7 @@ public class WrongApplication {
     List<WrongStringRes> wrongTranslatedFromAllOriginStrings = new ArrayList<>();//String gốc bị dịch sai
     List<WrongStringRes> wrongTranslatedStrings = new ArrayList<>();//String bị dịch sai
 
-    List<WrongArrayRes> wrongTranslatedOriginArrays = new ArrayList<>();//String gốc bị dịch sai
+    Map<String, WrongArrayRes> mapWrongTranslatedOriginArrays = new HashMap<>();//String gốc bị dịch sai
     List<WrongArrayRes> wrongTranslatedFromAllOriginArrays = new ArrayList<>();//String gốc bị dịch sai
     List<WrongArrayRes> wrongTranslatedArrays = new ArrayList<>();//String bị dịch sai
 
@@ -38,8 +36,8 @@ public class WrongApplication {
         return name;
     }
 
-    public List<WrongArrayRes> getWrongTranslatedOriginArrays() {
-        return wrongTranslatedOriginArrays;
+    public Map<String, WrongArrayRes> getMapWrongTranslatedOriginArrays() {
+        return mapWrongTranslatedOriginArrays;
     }
 
     public List<WrongArrayRes> getWrongTranslatedFromAllOriginArrays() {
@@ -106,7 +104,7 @@ public class WrongApplication {
         Optional<WrongPluralRes> hasString = wrongTranslatedFromAllOriginPlurals.stream().filter(stringRes1 -> stringRes1.equalsExact(origin)).findFirst();
         WrongPluralRes wrongStringRes;
         if (!hasString.isPresent()) {
-            wrongStringRes = new WrongPluralRes(origin.getName(), origin.getArrayType(),origin.getItems());
+            wrongStringRes = new WrongPluralRes(origin.getName(), origin.getArrayType(), origin.getItems());
             wrongStringRes.addDevice(sourceDevice.getName());
             wrongTranslatedFromAllOriginPlurals.add(wrongStringRes);
         } else {
@@ -139,16 +137,12 @@ public class WrongApplication {
     }
 
     public void addOrigin(int size, SourceDevice sourceDevice, ArrayRes origin) {
-        Optional<WrongArrayRes> hasString = wrongTranslatedOriginArrays.stream().filter(stringRes1 -> stringRes1.equalsExact(origin)).findFirst();
-        WrongArrayRes wrongStringRes;
-        if (!hasString.isPresent()) {
+        WrongArrayRes wrongStringRes = mapWrongTranslatedOriginArrays.get(origin.getName());
+        if (wrongStringRes == null) {
             wrongStringRes = new WrongArrayRes(origin.getName(), origin.getArrayType(), origin.getItems());
-            wrongStringRes.addDevice(sourceDevice.getName());
-            wrongTranslatedOriginArrays.add(wrongStringRes);
-        } else {
-            wrongStringRes = hasString.get();
-            wrongStringRes.addDevice(sourceDevice.getName());
         }
+        wrongStringRes.addDevice(sourceDevice.getName());
+        mapWrongTranslatedOriginArrays.put(origin.getName(), wrongStringRes);
         if (wrongStringRes.getDevices().size() == size) {
             wrongStringRes.getDevices().clear();
             wrongStringRes.getDevices().add("all");

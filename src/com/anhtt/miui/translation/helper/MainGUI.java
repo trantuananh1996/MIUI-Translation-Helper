@@ -281,12 +281,7 @@ public class MainGUI extends JFrame {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        stringToGroups.forEach(new BiConsumer<String, StringRes>() {
-            @Override
-            public void accept(String s, StringRes origin) {
-                wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
-            }
-        });
+        stringToGroups.forEach((s, origin) -> wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin));
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
@@ -296,12 +291,7 @@ public class MainGUI extends JFrame {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        stringToGroups.forEach(new BiConsumer<String, StringRes>() {
-            @Override
-            public void accept(String s, StringRes origin) {
-                wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
-            }
-        });
+        stringToGroups.forEach((s, origin) -> wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin));
 
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
@@ -312,9 +302,7 @@ public class MainGUI extends JFrame {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        stringToGroups.values().forEach(origin -> {
-            wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
-        });
+        stringToGroups.values().forEach(origin -> wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin));
 
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
@@ -325,9 +313,7 @@ public class MainGUI extends JFrame {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        stringToGroups.values().forEach(origin -> {
-            wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
-        });
+        stringToGroups.values().forEach(origin -> wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin));
 
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
@@ -338,10 +324,7 @@ public class MainGUI extends JFrame {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        stringToGroups.values().forEach(origin -> {
-            wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin);
-
-        });
+        stringToGroups.values().forEach(origin -> wrongApplication.addOrigin(sourceDevices.size(), sourceDevice, origin));
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
@@ -351,10 +334,7 @@ public class MainGUI extends JFrame {
             return wrong.getName().equals(appName);
         }).findFirst();
         wrongApplication = wrongApplication1.orElseGet(() -> new WrongApplication(appName));
-        stringToGroups.values().forEach(origin -> {
-            wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin);
-
-        });
+        stringToGroups.values().forEach(origin -> wrongApplication.addOriginFromAll(sourceDevices.size(), sourceDevice, origin));
         if (!wrongApplication1.isPresent()) wrongApplications.add(wrongApplication);
     }
 
@@ -580,7 +560,7 @@ public class MainGUI extends JFrame {
 
     private void btnViewUntranslatedArrayMouseClicked(MouseEvent e) {
         JFrame f = new JFrame("Test");
-        List<WrongApplication> applications = untranslatedApplications.stream().filter(wrongApplication -> wrongApplication.getWrongTranslatedOriginArrays().size() > 0)
+        List<WrongApplication> applications = untranslatedApplications.stream().filter(wrongApplication -> wrongApplication.getMapWrongTranslatedOriginArrays().values().size() > 0)
                 .collect(Collectors.toList());
         JList<WrongApplication> list = new JList(applications.toArray());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
