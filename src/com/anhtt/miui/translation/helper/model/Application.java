@@ -2,6 +2,7 @@ package com.anhtt.miui.translation.helper.model;
 
 import com.anhtt.miui.translation.helper.MainGUI;
 import com.anhtt.miui.translation.helper.SearchOptions;
+import com.anhtt.miui.translation.helper.model.res.ApplicationStringRes;
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
@@ -157,15 +158,15 @@ public class Application {
         return mapTranslatedFromOtherArray;
     }
 
-    private Map<String, PluralRes> mapOriginPlurals = new  HashMap<>();
-    private Map<String, PluralRes> mapTranslatedPlurals = new  HashMap<>();//Plural đã dịch
-    private Map<String, PluralRes> mapUnTranslatedPlurals = new  HashMap<>();//Plural chưa dịch
-    private Map<String, PluralRes> mapWrongTranslatedOriginPlurals = new  HashMap<>();//Plural gốc bị dịch sai
-    private Map<String, PluralRes> mapWrongTranslatedPlurals = new  HashMap<>();//Plural bị dịch sai
-    private Map<String, PluralRes> mapMightNotTranslatedPlurals = new  HashMap<>();//Plural giống nhau giữa gốc và dịch, có thể bỏ
-    private Map<String, PluralRes> mapCanNotTranslatePlurals = new  HashMap<>();//Plural không thể dịch
-    private Map<String, PluralRes> mapOriginEqualTranslatedPlurals = new  HashMap<>();//Dịch giống gốc
-    private Map<String, PluralRes> mapTranslatedFromOtherPlural = new  HashMap<>();//Dịch giống gốc
+    private Map<String, PluralRes> mapOriginPlurals = new HashMap<>();
+    private Map<String, PluralRes> mapTranslatedPlurals = new HashMap<>();//Plural đã dịch
+    private Map<String, PluralRes> mapUnTranslatedPlurals = new HashMap<>();//Plural chưa dịch
+    private Map<String, PluralRes> mapWrongTranslatedOriginPlurals = new HashMap<>();//Plural gốc bị dịch sai
+    private Map<String, PluralRes> mapWrongTranslatedPlurals = new HashMap<>();//Plural bị dịch sai
+    private Map<String, PluralRes> mapMightNotTranslatedPlurals = new HashMap<>();//Plural giống nhau giữa gốc và dịch, có thể bỏ
+    private Map<String, PluralRes> mapCanNotTranslatePlurals = new HashMap<>();//Plural không thể dịch
+    private Map<String, PluralRes> mapOriginEqualTranslatedPlurals = new HashMap<>();//Dịch giống gốc
+    private Map<String, PluralRes> mapTranslatedFromOtherPlural = new HashMap<>();//Dịch giống gốc
     private List<StringRes> duplicateString;
 
     public Map<String, PluralRes> getMapOriginPlurals() {
@@ -280,6 +281,7 @@ public class Application {
         if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi-rVN");
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
+        if (!file.exists()) return;
         Document doc = docBuilder.parse(file);
         NodeList list = doc.getElementsByTagName("string");
         for (int i = 0; i < list.getLength(); i++) {
@@ -313,20 +315,20 @@ public class Application {
     }
 
     public void compare(SourceDevice sourceDevice, Application specificedApp, Application translatedApp, TargetDevice transDevices) {
-        if (translatedApp == null) {
-            if (SearchOptions.searchString) {
-                mapOriginStrings.putAll(mapUnTranslatedStrings);
-//                unTranslatedStrings.addAll(originStrings);
-            }
-            if (SearchOptions.searchArray) {
-                mapUnTranslatedArrays.putAll(mapOriginArrays);
-//                unTranslatedArrays.addAll(originArrays);
-            }
-            if (SearchOptions.searchPlural) {
-                mapUnTranslatedPlurals.putAll(mapOriginPlurals);
-            }
-            return;
-        }
+//        if (translatedApp == null) {
+//            if (SearchOptions.searchString) {
+//                mapOriginStrings.putAll(mapUnTranslatedStrings);
+////                unTranslatedStrings.addAll(originStrings);
+//            }
+//            if (SearchOptions.searchArray) {
+//                mapUnTranslatedArrays.putAll(mapOriginArrays);
+////                unTranslatedArrays.addAll(originArrays);
+//            }
+//            if (SearchOptions.searchPlural) {
+//                mapUnTranslatedPlurals.putAll(mapOriginPlurals);
+//            }
+//            return;
+//        }
         if (SearchOptions.searchString)
             filterString(specificedApp, translatedApp, transDevices);
 
@@ -340,10 +342,8 @@ public class Application {
 
     private void filterPlural(Application specificedApp, Application translatedApp, TargetDevice transDevices) {
         mapOriginPlurals.forEach((key, originPlural) -> {
-            boolean canNotTranslate = MainGUI.unTranslateables.stream().anyMatch(unTranslateable -> {
-                return unTranslateable.getApplication().equals(getName())
-                        && unTranslateable.getName().equals(originPlural.getName());
-            });
+            boolean canNotTranslate = MainGUI.unTranslateables.get(getName() + "plurals.xml" + originPlural.getName()) != null;
+
 //            boolean isIgnored = MainGUI.autoIgnoredList.stream().anyMatch(unTranslateable -> {
 //                return unTranslateable.getApplication().equals(getName())
 //                        && unTranslateable.getName().equals(originPlural.getName());
@@ -383,12 +383,9 @@ public class Application {
         });
     }
 
-    private void filterArray(Application specificedApp, Application translatedApp, TargetDevice transDevices) {
+    private void filterArray(Application specificedApp, @Nullable Application translatedApp, TargetDevice transDevices) {
         mapOriginArrays.forEach((key, originArray) -> {
-            boolean canNotTranslate = MainGUI.unTranslateables.stream().anyMatch(unTranslateable -> {
-                return unTranslateable.getApplication().equals(getName())
-                        && unTranslateable.getName().equals(originArray.getName());
-            });
+            boolean canNotTranslate = MainGUI.unTranslateables.get(getName() + "arrays.xml" + originArray.getName()) != null;
 //            boolean isIgnored = MainGUI.autoIgnoredList.stream().anyMatch(unTranslateable -> {
 //                return unTranslateable.getApplication().equals(getName())
 //                        && unTranslateable.getName().equals(originArray.getName());
@@ -432,10 +429,8 @@ public class Application {
 
     private void filterString(Application specificedApp, Application translatedApp, TargetDevice transDevices) {
         mapOriginStrings.forEach((key, originString) -> {
-            boolean canNotTranslate = MainGUI.unTranslateables.stream().anyMatch(unTranslateable -> {
-                return unTranslateable.getApplication().equals(getName())
-                        && unTranslateable.getName().equals(originString.getName());
-            });
+            boolean canNotTranslate = MainGUI.unTranslateables.get(getName() + "strings.xml" + originString.getName()) != null;
+
 //            boolean isIgnored = MainGUI.autoIgnoredList.stream().anyMatch(unTranslateable -> {
 //                return unTranslateable.getApplication().equals(getName())
 //                        && unTranslateable.getName().equals(originString.getName());
@@ -494,12 +489,8 @@ public class Application {
 
         if (!isSpecific && hasTranslated == null && hasTranslatedInAll != null) {
             if (!hasTranslatedInAll.getName().contains("app_name") && !originPlural.isWrongFormat(hasTranslatedInAll)) {
-                Optional<UnTranslateable> unTranslateable = MainGUI.unTranslateables.stream().filter(unTranslateable1 -> {
-                    return unTranslateable1.getFile().equals("plurals.xml")
-                            && unTranslateable1.getApplication().equals(name)
-                            && unTranslateable1.getName().equals(hasTranslatedInAll.getName());
-                }).findFirst();
-                if (!unTranslateable.isPresent())
+                UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "plurals.xml" + hasTranslatedInAll.getName());
+                if (unTranslateable == null)
                     mapTranslatedFromOtherPlural.put(originPlural.getName(), hasTranslatedInAll);
             }
         }
@@ -519,12 +510,8 @@ public class Application {
 
         if (!isSpecific && hasTranslated == null && hasTranslatedInAll != null) {
             if (!hasTranslatedInAll.getName().contains("app_name") && !originArray.isWrongFormat(hasTranslatedInAll)) {
-                Optional<UnTranslateable> unTranslateable = MainGUI.unTranslateables.stream().filter(unTranslateable1 -> {
-                    return unTranslateable1.getFile().equals("arrays.xml")
-                            && unTranslateable1.getApplication().equals(name)
-                            && unTranslateable1.getName().equals(hasTranslatedInAll.getName());
-                }).findFirst();
-                if (!unTranslateable.isPresent())
+                UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "arrays.xml" + hasTranslatedInAll.getName());
+                if (unTranslateable == null)
                     mapTranslatedFromOtherArray.put(originArray.getName(), hasTranslatedInAll);
             }
         }
@@ -539,7 +526,7 @@ public class Application {
 
         StringRes hasTranslated = translatedApp.getMapOriginStrings().get(resourceToFind.getName());
 
-        StringRes hasTranslatedInAll = transDevices.getMapAllStrings().get(resourceToFind.getName());
+        ApplicationStringRes hasTranslatedInAll = transDevices.getMapAllStrings().get(resourceToFind.getName());
         StringRes result;
         if (!isSpecific)
             result = hasTranslated != null ? hasTranslated : hasTranslatedInAll;
@@ -547,14 +534,11 @@ public class Application {
 
         if (!isSpecific && hasTranslated == null && hasTranslatedInAll != null) {
             if (!hasTranslatedInAll.getName().contains("app_name") && !resourceToFind.isWrongFormat(hasTranslatedInAll)) {
-                Optional<UnTranslateable> unTranslateable = MainGUI.unTranslateables.stream().filter(unTranslateable1 -> {
-                    return unTranslateable1.getFile().equals("strings.xml")
-                            && unTranslateable1.getApplication().equals(name)
-                            && unTranslateable1.getName().equals(hasTranslatedInAll.getName());
-                }).findFirst();
-                if (!unTranslateable.isPresent()) {
-
-                    mapTranslatedFromOtherString.put(resourceToFind.getName(), hasTranslatedInAll);
+                UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "strings.xml" + hasTranslatedInAll.getName());
+                if (unTranslateable == null) {
+                    if (hasTranslatedInAll.getUntranslatedString().equals(resourceToFind.getValue())) {
+                        mapTranslatedFromOtherString.put(resourceToFind.getName(), hasTranslatedInAll);
+                    } else result = null;
                 }
             }
         }

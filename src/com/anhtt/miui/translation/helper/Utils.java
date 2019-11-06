@@ -200,7 +200,7 @@ public class Utils {
     public static void writeUnTranslatedStringToFile(String absolutePath, List<WrongApplication> wrongApplications) {
         for (WrongApplication wrongApplication : wrongApplications) {
 //            if (!isIgnoredApplication(wrongApplication.getName()))
-                writeUnTranslatedStringToFile(absolutePath, wrongApplication);
+            writeUnTranslatedStringToFile(absolutePath, wrongApplication);
         }
     }
 
@@ -710,7 +710,7 @@ public class Utils {
     }
 
     public static void addIgnoredFile(String path, String filteredPath, List<WrongApplication> untranslatedApplications) throws ParserConfigurationException, IOException, SAXException, TransformerException {
-        File sourceFile = new File(path + "\\MIUI10\\MIUI10_untranslateable.xml");
+        File sourceFile = new File(path + "\\MIUI11\\MIUI11_untranslateable.xml");
         File filteredFile = new File(filteredPath + "\\UnTranslated");
         if (!sourceFile.exists()) return;
         if (!filteredFile.exists() || filteredFile.listFiles() == null) return;
@@ -773,6 +773,7 @@ public class Utils {
         DocumentBuilder inDocBuilder = inFactory.newDocumentBuilder();
         File valueFolder = new File(path + appName);
         File file = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
+
         Document inDoc = inDocBuilder.parse(file);
         NodeList inList = inDoc.getElementsByTagName("string");
 
@@ -784,6 +785,17 @@ public class Utils {
         Document document = documentBuilder.newDocument();
         Element root = document.createElement("resources");
         document.appendChild(root);
+
+        File oldOut = new File(path + "\\out.xml");
+        if (oldOut.exists()) {
+            Document oldOutDoc = inDocBuilder.parse(oldOut);
+            NodeList oldOutList = oldOutDoc.getElementsByTagName("item");
+            for (int i = 0; i < oldOutList.getLength(); i++) {
+                Node node = oldOutList.item(i);
+                Node firstDocImportedNode = document.importNode(node, true);
+                root.appendChild(firstDocImportedNode);
+            }
+        }
 
         for (int i = 0; i < inList.getLength(); i++) {
             Element element = (Element) inList.item(i);
@@ -818,7 +830,7 @@ public class Utils {
                 .replaceAll("<resources", "\n<resources")
                 .replaceAll("</resources", "\n</resources");
 
-        FileOutputStream outputXml = new FileOutputStream(path + "\\" + appName + "\\out.xml");
+        FileOutputStream outputXml = new FileOutputStream(path + "\\out.xml");
         outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
         outputXml.close();
     }
@@ -839,7 +851,16 @@ public class Utils {
         Document document = documentBuilder.newDocument();
         Element root = document.createElement("resources");
         document.appendChild(root);
-
+        File oldOut = new File(path + "\\out.xml");
+        if (oldOut.exists()) {
+            Document oldOutDoc = inDocBuilder.parse(oldOut);
+            NodeList oldOutList = oldOutDoc.getElementsByTagName("item");
+            for (int i = 0; i < oldOutList.getLength(); i++) {
+                Node node = oldOutList.item(i);
+                Node firstDocImportedNode = document.importNode(node, true);
+                root.appendChild(firstDocImportedNode);
+            }
+        }
         for (int i = 0; i < inList.getLength(); i++) {
             Element element = (Element) inList.item(i);
             String name = "";
@@ -873,10 +894,8 @@ public class Utils {
                 .replaceAll("<resources", "\n<resources")
                 .replaceAll("</resources", "\n</resources");
 
-        FileOutputStream outputXml = new FileOutputStream(path + "\\" + appName + "\\out.xml");
+        FileOutputStream outputXml = new FileOutputStream(path + "\\out.xml");
         outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
         outputXml.close();
     }
-
-
 }

@@ -1,5 +1,6 @@
 package com.anhtt.miui.translation.helper.model;
 
+import com.anhtt.miui.translation.helper.model.res.ApplicationStringRes;
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
@@ -10,17 +11,16 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 public class TargetDevice {
     private String name;
     private File translation;
     private List<Application> apps;
     //    private List<StringRes> allStrings = new ArrayList<>();
-    private Map<String, StringRes> mapAllStrings = new HashMap<>();
+    private Map<String, ApplicationStringRes> mapAllStrings = new HashMap<>();
     private Map<String, ArrayRes> mapAllArrays = new HashMap<>();
-//    private List<ArrayRes> allArrays = new ArrayList<>();
-private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
+    //    private List<ArrayRes> allArrays = new ArrayList<>();
+    private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
 
     public Map<String, PluralRes> getMapAllPlurals() {
         return mapAllPlurals;
@@ -38,11 +38,11 @@ private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
         this.mapAllArrays = mapAllArrays;
     }
 
-    public Map<String, StringRes> getMapAllStrings() {
+    public Map<String, ApplicationStringRes> getMapAllStrings() {
         return mapAllStrings;
     }
 
-    public void setMapAllStrings(Map<String, StringRes> mapAllStrings) {
+    public void setMapAllStrings(Map<String, ApplicationStringRes> mapAllStrings) {
         this.mapAllStrings = mapAllStrings;
     }
 
@@ -85,7 +85,7 @@ private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
 
 
     @Nullable
-    public static TargetDevice create(String path, boolean isApplyFilter) {
+    public static TargetDevice create(String path, boolean isApplyFilter, SourceDevice sourceDevicesWithoutCompare) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
@@ -101,7 +101,20 @@ private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
                         Application app = Application.create(appFolder.getAbsolutePath(), isApplyFilter);
                         if (app != null) {
                             apps.add(app);
-                            originDevice.getMapAllStrings().putAll(app.getMapOriginStrings());
+                            if (sourceDevicesWithoutCompare != null)
+                                for (StringRes stringRes : app.getMapOriginStrings().values()) {
+                                    Application engApp = sourceDevicesWithoutCompare.getApps().get(app.getName());
+                                    if (engApp != null) {
+                                        StringRes engString = engApp.getMapOriginStrings().get(stringRes.getName());
+                                        if (engString != null) {
+                                            ApplicationStringRes applicationStringRes = new ApplicationStringRes(stringRes.getName(), stringRes.getValue());
+                                            applicationStringRes.setUntranslatedString(engString.getValue());
+//
+                                            originDevice.getMapAllStrings().put(stringRes.getName(), applicationStringRes);
+                                        }
+                                    }
+
+                                }
                             originDevice.getMapAllArrays().putAll(app.getMapOriginArrays());
                             originDevice.getMapAllPlurals().putAll(app.getMapOriginPlurals());
                         }

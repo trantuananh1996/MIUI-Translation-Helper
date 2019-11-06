@@ -9,7 +9,7 @@ import java.util.*;
 public class SourceDevice {
     private String name;
     private File translation;
-    private List<Application> apps;
+    private Map<String, Application> apps;
 
     public SourceDevice(String name, File translation) {
         this.name = name;
@@ -23,7 +23,7 @@ public class SourceDevice {
             File file = new File(path);
             name = file.getName();
             if (!name.contains("Diff") && !name.contains("extras") && !name.contains("stable") && !name.contains(".") && !file.isHidden())
-                if (!isIgnoreDevice(name))
+                if (isValidDevice(name))
                     return name;
         } catch (Exception e) {
             e.printStackTrace();
@@ -32,14 +32,14 @@ public class SourceDevice {
         return null;
     }
 
-    private static boolean isIgnoreDevice(String name) {//Ignore very old device
-        List<String> strings = Arrays.asList("aqua", "beryllium", "cancro", "cereus", "kate", "kenzo", "libra", "helium"
-                , "hydrogen", "land", "markw", "mido", "nikel", "omega", "prada", "rolex");
+    private static boolean isValidDevice(String name) {//Ignore very old device
+        List<String> strings = Arrays.asList("cepheus", "davinci", "dipper", "equuleus", "chiron", "grus", "jason", "lavender"
+                , "nitrogen", "perseus", "platina", "polaris", "pyxis", "raphael", "sakura", "sagit", "sirius", "ursa", "violet", "wayne", "whyred");
         return strings.contains(name);
     }
 
     @Nullable
-    public static SourceDevice create(MainGUI.StringWorker swingWorker, String path, TargetDevice transDevices, List<SourceDevice> targetSeparateDevices) {
+    public static SourceDevice create(MainGUI.StringWorker swingWorker, String path, TargetDevice transDevices, List<SourceDevice> targetSeparateDevices, boolean needCompare) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
@@ -50,17 +50,19 @@ public class SourceDevice {
             swingWorker.sendLog("Đang xử lý " + deviceName);
             File[] child = file.listFiles();
             if (child != null) {
-                List<Application> apps = new ArrayList<>();
+                Map<String, Application> apps = new HashMap<>();
                 for (File appFolder : child) {
                     if (appFolder.exists() && appFolder.isDirectory()) {
                         Application app = Application.create(appFolder.getAbsolutePath(), true);
                         if (app != null) {
-                            swingWorker.sendLog("Đang xử lý " + deviceName + ": " + app.getName());
+                            if (needCompare) {
+                                swingWorker.sendLog("Đang xử lý " + deviceName + ": " + app.getName());
 
-                            Application separateApp = findSpecificedApp(targetSeparateDevices, sourceDevice, app);
-                            Application translatedApp = findTranslatedApp(transDevices, app);
-                            app.compare(sourceDevice, separateApp, translatedApp, transDevices);
-                            apps.add(app);
+                                Application separateApp = findSpecificedApp(targetSeparateDevices, sourceDevice, app);
+                                Application translatedApp = findTranslatedApp(transDevices, app);
+                                app.compare(sourceDevice, separateApp, translatedApp, transDevices);
+                            }
+                            apps.put(app.getName(), app);
                         }
                     }
                 }
@@ -84,12 +86,12 @@ public class SourceDevice {
             SourceDevice sourceDevice = new SourceDevice(deviceName, file);
             File[] child = file.listFiles();
             if (child != null) {
-                List<Application> apps = new ArrayList<>();
+                Map<String, Application> apps = new HashMap<>();
                 for (File appFolder : child) {
                     if (appFolder.exists() && appFolder.isDirectory()) {
                         Application app = Application.create(appFolder.getAbsolutePath(), false);
                         if (app != null) {
-                            apps.add(app);
+                            apps.put(app.getName(), app);
                         }
                     }
                 }
@@ -107,8 +109,8 @@ public class SourceDevice {
         //Duyệt từng sourceDevice trong ngôn ngữ gốc
         Optional<SourceDevice> specificDevice = specificSourceDevices.stream().filter(sourceDevice1 -> sourceDevice.getName().equals(sourceDevice1.getName())).findAny();
         if (specificDevice.isPresent()) {//Có tùy chỉnh
-            Optional<Application> specificApp = specificDevice.get().getApps().stream().filter(app1 -> app.getName().equals(app1.getName())).findAny();
-            if (specificApp.isPresent()) return specificApp.get();
+            Application specificApp = specificDevice.get().getApps().get(app.getName());
+            if (specificApp != null) return specificApp;
         }
         return null;
     }
@@ -127,11 +129,11 @@ public class SourceDevice {
         return translation;
     }
 
-    public void setApps(List<Application> apps) {
+    public void setApps(Map<String, Application> apps) {
         this.apps = apps;
     }
 
-    public List<Application> getApps() {
+    public Map<String, Application> getApps() {
         return apps;
     }
 }

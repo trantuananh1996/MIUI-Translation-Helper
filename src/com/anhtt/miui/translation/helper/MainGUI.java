@@ -12,6 +12,8 @@ import com.jgoodies.forms.factories.Borders;
 import com.jgoodies.forms.factories.CC;
 import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -34,7 +36,6 @@ import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -44,9 +45,9 @@ import java.util.stream.Collectors;
 public class MainGUI extends JFrame {
 
     TargetDevice targetDevice;
-    List<SourceDevice> sourceDevices;
+    HashMap<String, SourceDevice> sourceDevices;
     List<SourceDevice> targetSeparateSourceDevices;
-    public static List<UnTranslateable> unTranslateables;
+    public static Map<String, UnTranslateable> unTranslateables;
     public static List<UnTranslateable> autoIgnoredList;
     StringWorker worker;
     public List<WrongApplication> wrongApplications = new ArrayList<>();
@@ -72,10 +73,46 @@ public class MainGUI extends JFrame {
         btnViewUnTranslatedString.setVisible(false);
         btnMoveToIgnored.setVisible(false);
         //TODO: For fast testing
-        edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv10-XML-Compare");
-        edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-10-XML-Vietnamese\\Vietnamese");
+        edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv11-XML-Compare");
+        edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-11-XML-Vietnamese\\Vietnamese");
         edtFilteredFolder.setText("C:\\Users\\trant\\Documents\\Filtered");
         edtResCheckFolder.setText("C:\\Users\\trant\\Documents\\Github\\MA-XML-CHECK-RESOURCES");
+
+//        try {
+//            callGit();
+//        } catch (IOException | GitAPIException e) {
+//            e.printStackTrace();
+//        }
+    }
+
+    private static final String REMOTE_URL = "https://github.com/ingbrzy/Xiaomi.eu-MIUIv11-XML-Compare.git";
+
+    public void callGit() throws IOException, GitAPIException {
+        // prepare a new folder for the cloned repository
+        File localPath = File.createTempFile("TestGitRepository", "");
+        if (!localPath.delete()) {
+            throw new IOException("Could not delete temporary file " + localPath);
+        }
+
+        // then clone
+        System.out.println("Cloning from " + REMOTE_URL + " to " + localPath);
+        try (Git result = Git.cloneRepository()
+                .setURI(REMOTE_URL)
+                .setDirectory(localPath)
+                .call()) {
+            // Note: the call() returns an opened repository already which needs to be closed to avoid file handle leaks!
+            System.out.println("Having repository: " + result.getRepository().getDirectory());
+            try (Git git = new Git(result.getRepository())) {
+                git.pull()
+                        .call();
+            }
+
+            System.out.println("Pulled from remote repository to local repository at " + result.getRepository().getDirectory());
+        }
+
+        // clean up here to not keep using more and more disk-space for these samples
+//        FileUtils.deleteDirectory(localPath);
+        localPath.delete();
     }
 
     public static void main(String[] args) {
@@ -161,7 +198,7 @@ public class MainGUI extends JFrame {
         if (file.listFiles() == null) return null;
         for (File child : Objects.requireNonNull(file.listFiles())) {
             if (child.isDirectory())
-                if (child.getName().equals("Diff_v9-v10")) return file;
+                if (child.getName().equals("Diff_v11-v10-9.9.24")) return file;
         }
         return null;
     }
@@ -206,7 +243,8 @@ public class MainGUI extends JFrame {
 
             File targetDeviceFolder = new File(targetLangFolder.getAbsolutePath() + "\\main");
             if (!targetDeviceFolder.exists()) return null;
-            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false);
+//            HashMap<String, SourceDevice> sourceDevicesWithoutCompare = createDevices(this, sourceCompareFolder, targetDevice, targetSeparateSourceDevices, false);
+            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false, SourceDevice.create(sourceCompareFolder.getAbsolutePath() + "/sirius"));
 
 
             File specificDevicesFolder = new File(targetLangFolder.getAbsolutePath() + "\\device");
@@ -218,11 +256,11 @@ public class MainGUI extends JFrame {
                 }
             }
 
-            sourceDevices = createDevices(this, sourceCompareFolder, targetDevice, targetSeparateSourceDevices);
+            sourceDevices = createDevices(this, sourceCompareFolder, targetDevice, targetSeparateSourceDevices, true);
 
 
-            sourceDevices.forEach(sourceDevice -> {
-                sourceDevice.getApps().forEach(application -> {
+            sourceDevices.values().forEach(sourceDevice -> {
+                sourceDevice.getApps().values().forEach(application -> {
                     if (cbFindFormatedString.isSelected()) {
                         groupString(application.getName(), application.getMapWrongTranslatedOriginStrings(), sourceDevice, wrongApplications);
                         groupArray(application.getName(), application.getMapWrongTranslatedOriginArrays(), sourceDevice, wrongApplications);
@@ -237,8 +275,8 @@ public class MainGUI extends JFrame {
                         groupPluralFromAll(application.getName(), application.getMapTranslatedFromOtherPlural(), sourceDevice, untranslatedFromAllApplications);
                         groupPlural(application.getName(), application.getMapUnTranslatedPlurals(), sourceDevice, untranslatedApplications);
                     }
-                    if (cbFindCanRemove.isSelected())
-                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getMapOriginEqualTranslatedStrings());
+//                    if (cbFindCanRemove.isSelected())
+//                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getMapOriginEqualTranslatedStrings());
 
                 });
             });
@@ -383,13 +421,13 @@ public class MainGUI extends JFrame {
 
     }
 
-    private List<UnTranslateable> createUnTranslateable() throws IOException, SAXException, ParserConfigurationException {
-        List<UnTranslateable> unTranslateables = new ArrayList<>();
+    private Map<String, UnTranslateable> createUnTranslateable() throws IOException, SAXException, ParserConfigurationException {
+        Map<String, UnTranslateable> unTranslateables = new HashMap<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
 
-        File sourceFile = new File(edtResCheckFolder.getText() + "\\MIUI10\\MIUI10_untranslateable.xml");
-        if (!sourceFile.exists()) return new ArrayList<>();
+        File sourceFile = new File(edtResCheckFolder.getText() + "\\MIUI11\\MIUI11_untranslateable.xml");
+        if (!sourceFile.exists()) return new HashMap<>();
         Document doc = docBuilder.parse(sourceFile);
         NodeList list = doc.getElementsByTagName("item");
         for (int i = 0; i < list.getLength(); i++) {
@@ -417,24 +455,21 @@ public class MainGUI extends JFrame {
                 unTranslateable.setApplication(application);
                 unTranslateable.setFile(file);
 
-                unTranslateables.add(unTranslateable);
+                unTranslateables.put(application + file + name, unTranslateable);
             }
         }
 
-        unTranslateables.removeIf(unTranslateable ->
-                unTranslateable.getName() == null
-        );
         return unTranslateables;
     }
 
-    private List<SourceDevice> createDevices(StringWorker swingWorker, File sourceCompareFolder, TargetDevice targetDevice, List<SourceDevice> targetSeparateDevices) {
+    private HashMap<String, SourceDevice> createDevices(StringWorker swingWorker, File sourceCompareFolder, TargetDevice targetDevice, List<SourceDevice> targetSeparateDevices, boolean needCompare) {
         File sourceDevicesFolder = new File(sourceCompareFolder.getAbsolutePath());
         if (!sourceDevicesFolder.exists()) new ArrayList<>();
-        List<SourceDevice> sourceDevices = new ArrayList<>();
+        HashMap<String, SourceDevice> sourceDevices = new HashMap<>();
         for (File file : Objects.requireNonNull(sourceDevicesFolder.listFiles())) {
             if (file.isDirectory()) {
-                SourceDevice sourceDevice = SourceDevice.create(swingWorker, file.getAbsolutePath(), targetDevice, targetSeparateDevices);
-                if (sourceDevice != null) sourceDevices.add(sourceDevice);
+                SourceDevice sourceDevice = SourceDevice.create(swingWorker, file.getAbsolutePath(), targetDevice, targetSeparateDevices, needCompare);
+                if (sourceDevice != null) sourceDevices.put(sourceDevice.getName(), sourceDevice);
             }
         }
         return sourceDevices;
@@ -504,7 +539,7 @@ public class MainGUI extends JFrame {
         logger.info("Kiểm tra trùng lặp");
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
-        targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false);
+        targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false, null);
         if (targetDevice == null) return;
         targetDevice.getApps().forEach(application -> {
             application.setDuplicateString(getDuplicates(application.getMapOriginStrings()));
