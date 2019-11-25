@@ -74,6 +74,7 @@ public class TargetDevice {
         try {
             File file = new File(path);
             name = file.getName();
+//            if(!name.contains("Diff") && !name.contains("extras") && name.contains("_stable") && !name.contains(".") && !file.isHidden()) return name.replaceAll("_stable","");
             if (!name.contains("Diff") && !name.contains("extras") && !name.contains("stable") && !name.contains(".") && !file.isHidden())
                 return name;
         } catch (Exception e) {

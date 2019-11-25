@@ -7,7 +7,9 @@ import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 import com.sun.istack.internal.Nullable;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -15,7 +17,9 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Application {
     private String name;
@@ -542,9 +546,23 @@ public class Application {
                 }
             }
         }
+//        if (result != null) {
+//            if (isStringContainsLatinCharactersOnly(result.getValue())) result = null;
+//        }
         return result;
     }
-
+    public static boolean isProbablyArabic(String s) {
+        for (int i = 0; i < s.length();) {
+            int c = s.codePointAt(i);
+            if (c >= 0x0600 && c <= 0x06E0)
+                return true;
+            i += Character.charCount(c);
+        }
+        return false;
+    }
+    public static boolean isStringContainsLatinCharactersOnly(final String iStringToCheck) {
+        return iStringToCheck.matches("^[a-zA-Z0-9.]+$");
+    }
 //    public List<StringRes> getOriginString() {
 //        return originStrings;
 //    }
