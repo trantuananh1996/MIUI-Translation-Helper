@@ -37,7 +37,16 @@ public class Utils {
         }
         return sw.toString();
     }
-
+    public static boolean containsHanScript(String s) {
+        for (int i = 0; i < s.length(); ) {
+            int codepoint = s.codePointAt(i);
+            i += Character.charCount(codepoint);
+            if (Character.UnicodeScript.of(codepoint) == Character.UnicodeScript.HAN) {
+                return true;
+            }
+        }
+        return false;
+    }
     public static String nodeListToString(NodeList nodes) throws TransformerException {
         DOMSource source = new DOMSource();
         StringWriter writer = new StringWriter();

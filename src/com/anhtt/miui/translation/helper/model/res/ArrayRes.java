@@ -2,7 +2,6 @@ package com.anhtt.miui.translation.helper.model.res;
 
 import com.anhtt.miui.translation.helper.Utils;
 import com.sun.istack.internal.Nullable;
-import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -10,6 +9,7 @@ import org.w3c.dom.NodeList;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.anhtt.miui.translation.helper.Utils.containsHanScript;
 import static com.anhtt.miui.translation.helper.Utils.isNumeric;
 
 public class ArrayRes implements Resource<ArrayRes> {
@@ -47,7 +47,8 @@ public class ArrayRes implements Resource<ArrayRes> {
                 name = attr.getNodeValue();
         }
 
-        if (isApplyFilter) if (name == null
+        boolean isIgnoreName = isApplyFilter;
+        if (isApplyFilter) isIgnoreName = name == null
                 || name.length() == 0
                 || name.contains("alphabet_table")
                 || name.contains("_locale")
@@ -56,9 +57,7 @@ public class ArrayRes implements Resource<ArrayRes> {
                 || name.endsWith("_devices")
                 || name.contains("_region")
                 || name.startsWith("prefValues")
-                || name.startsWith("pref_")
-        ) return null;
-
+                || name.startsWith("pref_");
 
         List<Item> items = new ArrayList<>();
         NodeList list = element.getChildNodes();
@@ -68,19 +67,21 @@ public class ArrayRes implements Resource<ArrayRes> {
                 items.add(new Item(Utils.nodeToString(child)));
         }
         //Bỏ qua nếu tất cả là số hoặc string res; tất cả là package name dạng com.abc
-        if (isApplyFilter) if (items.stream().allMatch(item -> item.getValue().contains("string/")
+        boolean isIgnoreValue = isApplyFilter;
+        if (isApplyFilter) isIgnoreValue = items.stream().allMatch(item -> item.getValue().contains("string/")
                 || item.getValue().contains("android:string/")
                 || isNumeric(item.getValue())
                 || item.getValue().contains("drawable/")
                 || item.getValue().contains("android:drawable/"))
 
                 || items.stream().allMatch(item -> item.getValue().contains("com.") && !item.getValue().contains(" "))
-                || items.stream().allMatch(item -> item.getValue().length() > 15 && !item.getValue().contains(" "))
-                || items.stream().allMatch(item -> item.getValue().equals("%1$s"))
+                || items.stream().allMatch(item -> !containsHanScript(item.getValue()) && item.getValue().length() > 15 && !item.getValue().contains(" "))
+                || items.stream().allMatch(item -> item.getValue().equals("%1$s"));
 
-        ) return null;
-
-
+        if (isIgnoreValue)
+            return null;
+        if (isIgnoreName)
+            return null;
         if (arrayType != null && arrayType.length() > 0) {
             ArrayRes arrayRes = new ArrayRes(name, arrayType);
             arrayRes.setItems(items);

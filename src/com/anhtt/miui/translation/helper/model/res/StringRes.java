@@ -14,6 +14,7 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 
+import static com.anhtt.miui.translation.helper.Utils.containsHanScript;
 import static com.anhtt.miui.translation.helper.Utils.nodeToString;
 
 public class StringRes implements Resource<StringRes> {
@@ -75,7 +76,7 @@ public class StringRes implements Resource<StringRes> {
                     || value.equals("%1$s")
                     || value.equals("%2$s")
                     || value.equals("%3$s")
-                    || (value.length() >= 15 && !value.contains(" "))
+                    || (!containsHanScript(value) && value.length() >= 15 && !value.contains(" "))
                     || value.trim().replaceAll("\n", "").replaceAll("\t", "").length() == 0
             ) return null;
 
@@ -87,6 +88,8 @@ public class StringRes implements Resource<StringRes> {
 
         return null;
     }
+
+
 
     public void setFormatted(boolean formatted) {
         this.formatted = formatted;
