@@ -51,7 +51,7 @@ public class SourceDevice {
 
         if (file.exists()) {
             SourceDevice sourceDevice = new SourceDevice(deviceName, file);
-            swingWorker.sendLog("Đang xử lý " + deviceName);
+            swingWorker.sendLog("Processing device " + deviceName);
             File[] child = file.listFiles();
             if (child != null) {
                 Map<String, Application> apps = new HashMap<>();
@@ -60,7 +60,7 @@ public class SourceDevice {
                         Application app = Application.create(appFolder.getAbsolutePath(), true);
                         if (app != null) {
                             if (needCompare) {
-                                swingWorker.sendLog("Đang xử lý " + deviceName + ": " + app.getName());
+                                swingWorker.sendLog("Processing " + deviceName + ": " + app.getName());
 
                                 Application separateApp = findSpecificedApp(targetSeparateDevices, sourceDevice, app);
                                 Application translatedApp = findTranslatedApp(transDevices, app);

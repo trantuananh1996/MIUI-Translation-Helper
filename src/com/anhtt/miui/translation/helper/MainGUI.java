@@ -14,6 +14,10 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.RepositoryNotFoundException;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.transport.FetchResult;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
@@ -33,11 +37,12 @@ import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+
+import static com.anhtt.miui.translation.helper.Utils.delete;
 
 /**
  * @author unknown
@@ -71,13 +76,24 @@ public class MainGUI extends JFrame {
         setLocationRelativeTo(getOwner());
         btnViewUntranslatedArray.setVisible(false);
         btnViewUnTranslatedString.setVisible(false);
-        btnMoveToIgnored.setVisible(false);
         //TODO: For fast testing
         edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv11-XML-Compare");
         edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-11-XML-Vietnamese\\Vietnamese");
         edtFilteredFolder.setText("C:\\Users\\trant\\Documents\\Filtered");
         edtResCheckFolder.setText("C:\\Users\\trant\\Documents\\Github\\MA-XML-CHECK-RESOURCES");
 
+
+        for (Language language : Language.values()) {
+            langComboBox.addItem(new ComboItem(language.name(), language.getCode()));
+        }
+        langComboBox.addActionListener(e -> {
+            Language language = Language.values()[langComboBox.getSelectedIndex()];
+            Config.PRIMARY_RES_FOLDER = "values-" + language.getLocale();
+            Config.SECONDARY_RES_FOLDER = "values-" + language.getLocale() + "-" + language.getCode();
+            Config.FILTERED_PATH = "Filtered-" + language.getCode();
+            Config.TRANSLATED_REPO = language.getGitUrl();
+        });
+        langComboBox.setSelectedIndex(3);
 //        try {
 //            callGit();
 //        } catch (IOException | GitAPIException e) {
@@ -87,33 +103,6 @@ public class MainGUI extends JFrame {
 
     private static final String REMOTE_URL = "https://github.com/ingbrzy/Xiaomi.eu-MIUIv11-XML-Compare.git";
 
-    public void callGit() throws IOException, GitAPIException {
-        // prepare a new folder for the cloned repository
-        File localPath = File.createTempFile("TestGitRepository", "");
-        if (!localPath.delete()) {
-            throw new IOException("Could not delete temporary file " + localPath);
-        }
-
-        // then clone
-        System.out.println("Cloning from " + REMOTE_URL + " to " + localPath);
-        try (Git result = Git.cloneRepository()
-                .setURI(REMOTE_URL)
-                .setDirectory(localPath)
-                .call()) {
-            // Note: the call() returns an opened repository already which needs to be closed to avoid file handle leaks!
-            System.out.println("Having repository: " + result.getRepository().getDirectory());
-            try (Git git = new Git(result.getRepository())) {
-                git.pull()
-                        .call();
-            }
-
-            System.out.println("Pulled from remote repository to local repository at " + result.getRepository().getDirectory());
-        }
-
-        // clean up here to not keep using more and more disk-space for these samples
-//        FileUtils.deleteDirectory(localPath);
-        localPath.delete();
-    }
 
     public static void main(String[] args) {
         try {
@@ -132,45 +121,41 @@ public class MainGUI extends JFrame {
         SearchOptions.filterCanRemove = cbFindCanRemove.isSelected();
         SearchOptions.filterFormatted = cbFindFormatedString.isSelected();
         SearchOptions.filterUnTranslated = cbFindUntranslated.isSelected();
-        SearchOptions.deepFilterForUnTranslated = cbFindInAllApp.isSelected();
 
         if (!SearchOptions.searchPlural && !SearchOptions.searchArray && !SearchOptions.searchString) {
-            JOptionPane.showMessageDialog(null, "Chưa chọn mục cần lọc");
+            JOptionPane.showMessageDialog(null, "You have to pick string, array or/and plural");
             return;
         }
         String originPath = edtOriginFolder.getText();
         String translationPath = edtTranslatedFolder.getText();
-        String filteredPath = edtFilteredFolder.getText();
+        String filteredPath = edtFilteredFolder.getText() + "/" + Config.FILTERED_PATH;
 
         File originFolder = checkOrginFolder(originPath);
         File translationFolder = checkTranslationFolder(translationPath);
         File filteredFolder = new File(filteredPath);
         if (originFolder == null) {
-            JOptionPane.showMessageDialog(null, "Kiểm tra thư mục ngôn ngữ gốc");
+            JOptionPane.showMessageDialog(null, "Check english folder");
             return;
         }
         if (translationFolder == null) {
-            JOptionPane.showMessageDialog(null, "Kiểm tra thư mục ngôn ngữ đã dịch");
+            JOptionPane.showMessageDialog(null, "Check translated folder");
             return;
         }
 
         if (!filteredFolder.exists()) filteredFolder.mkdirs();
         else {
-            try {
-                deleteDirectoryStream(filteredFolder.toPath());
-            } catch (IOException e1) {
-                e1.printStackTrace();
-            }
+            delete(filteredFolder);
             filteredFolder.mkdirs();
         }
 
-        logger.info("Đang chuẩn bị...");
+        logger.info("Preparing...");
 
         worker = new StringWorker(originFolder, translationFolder, filteredFolder);
         worker.execute();
     }
 
     private File checkTranslationFolder(String translationPath) {
+        System.out.println("checkTranslationFolder() called with: translationPath = [" + translationPath + "]");
         File file = new File(translationPath);
         if (!file.exists()) return null;
         if (!file.isDirectory()) return null;
@@ -192,22 +177,17 @@ public class MainGUI extends JFrame {
 
     @Nullable
     private File checkOrginFolder(String originPath) {
+        System.out.println("checkOrginFolder() called with: originPath = [" + originPath + "]");
         File file = new File(originPath);
         if (!file.exists()) return null;
         if (!file.isDirectory()) return null;
         if (file.listFiles() == null) return null;
-        for (File child : Objects.requireNonNull(file.listFiles())) {
-            if (child.isDirectory())
-                if (child.getName().equals("Diff_v11-v10-9.9.24")) return file;
-        }
-        return null;
-    }
-
-    void deleteDirectoryStream(Path path) throws IOException {
-//        Files.walk(path)
-//                .sorted(Comparator.reverseOrder())
-//                .map(Path::toFile)
-//                .forEach(File::delete);
+        return file;
+//        for (File child : Objects.requireNonNull(file.listFiles())) {
+//            if (child.isDirectory())
+//                if (child.getName().equals("Diff_v11-v10-9.9.24")) return file;
+//        }
+//        return null;
     }
 
     public final class StringWorker extends SwingWorker<String, String> {
@@ -307,7 +287,7 @@ public class MainGUI extends JFrame {
 
         @Override
         protected void done() {
-            logger.info("Đã xong. Kiểm tra thư mục kết quả");
+            logger.info("Done. Check working folder for result");
             btnViewUntranslatedArray.setVisible(true);
             btnViewUnTranslatedString.setVisible(true);
         }
@@ -506,22 +486,11 @@ public class MainGUI extends JFrame {
         edtResCheckFolder.setText(fileChooser.getSelectedFile().getAbsolutePath());
     }
 
-    private void btnMoveToIgnoredMouseClicked(MouseEvent e) {
-        if (untranslatedApplications != null && untranslatedApplications.size() > 0) {
-            try {
-                Utils.addIgnoredFile(edtResCheckFolder.getText(), edtFilteredFolder.getText(), untranslatedApplications);
-            } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
-                e1.printStackTrace();
-            }
-        } else JOptionPane.showMessageDialog(null, "Chưa lọc/không có file chưa dịch");
-
-    }
-
 
     private void btnStopMouseClicked(MouseEvent e) {
         worker.done();
         worker.cancel(true);
-        logger.info("Đã hủy quá trình");
+        logger.info("Cancelled");
     }
 
     private void button1MouseClicked(MouseEvent e) {
@@ -535,8 +504,7 @@ public class MainGUI extends JFrame {
         SearchOptions.filterCanRemove = cbFindCanRemove.isSelected();
         SearchOptions.filterFormatted = cbFindFormatedString.isSelected();
         SearchOptions.filterUnTranslated = cbFindUntranslated.isSelected();
-        SearchOptions.deepFilterForUnTranslated = cbFindInAllApp.isSelected();
-        logger.info("Kiểm tra trùng lặp");
+        logger.info("Checking duplicates");
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
         targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false, null);
@@ -547,7 +515,7 @@ public class MainGUI extends JFrame {
 //                logger.info("Không có trùng lặp");
             } else {
                 logger.info(application.getName());
-                logger.info("Có trùng lặp");
+                logger.info("Have duplicated text");
                 btnViewDuplicate.setVisible(true);
             }
         });
@@ -579,7 +547,7 @@ public class MainGUI extends JFrame {
                     int index = list.locationToIndex(evt.getPoint());
                     logger.info("Converting " + applications.get(index).getName());
                     try {
-                        Utils.convertUntranslateableFile(edtFilteredFolder.getText() + "\\UnTranslated\\", applications.get(index).getName());
+                        Utils.convertUntranslateableFile(edtFilteredFolder.getText() + "\\" + Config.FILTERED_PATH + "\\UnTranslated\\", applications.get(index).getName());
                     } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
                         e1.printStackTrace();
                     }
@@ -607,7 +575,7 @@ public class MainGUI extends JFrame {
                     int index = list.locationToIndex(evt.getPoint());
                     logger.info("Converting " + applications.get(index).getName());
                     try {
-                        Utils.convertUntranslateableArrayFile(edtFilteredFolder.getText() + "\\UnTranslatedArray\\", applications.get(index).getName());
+                        Utils.convertUntranslateableArrayFile(edtFilteredFolder.getText() + "\\" + Config.FILTERED_PATH + "\\UnTranslatedArray\\", applications.get(index).getName());
                     } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
                         e1.printStackTrace();
                     }
@@ -621,12 +589,8 @@ public class MainGUI extends JFrame {
         f.setVisible(true);
     }
 
-    private void cbFindUntranslatedStateChanged(ChangeEvent e) {
-        cbFindInAllApp.setVisible(cbFindUntranslated.isSelected());
-    }
-
     private void btnViewDuplicateMouseClicked(MouseEvent e) {
-        JFrame f = new JFrame("Trùng");
+        JFrame f = new JFrame("Duplicated");
         List<Application> applications = targetDevice.getApps().stream().filter(application -> application.getDuplicateString() != null && application.getDuplicateString().size() > 0).collect(Collectors.toList());
         JList<Application> list = new JList(applications.toArray());
         list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -653,24 +617,127 @@ public class MainGUI extends JFrame {
         f.setVisible(true);
     }
 
+    private void cbFindUntranslatedStateChanged(ChangeEvent e) {
+        // TODO add your code here
+    }
+
+    private void btnPullEnglishMouseClicked(MouseEvent e) {
+        try {
+            logger.info("Fetching repository: " + edtOriginFolder.getText());
+            FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder();
+            Repository repository = repositoryBuilder.setGitDir(new File(edtOriginFolder.getText() + "/.git"))
+                    .readEnvironment() // scan environment GIT_* variables
+                    .findGitDir() // scan up the file system tree
+                    .setMustExist(true)
+                    .build();
+
+
+            FetchResult result = new Git(repository).fetch().call();
+            System.out.println(result.getMessages());
+            logger.info("Fetched from remote repository to local repository at " + repository.getDirectory());
+
+        } catch (RepositoryNotFoundException ex) {
+            logger.info("Repository not found");
+        } catch (IOException | GitAPIException e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    private void btnPullTranslatedMouseClicked(MouseEvent e) {
+        try {
+            logger.info("Fetching repository: " + edtTranslatedFolder.getText());
+            FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder();
+            Repository repository = repositoryBuilder.setGitDir(new File(edtTranslatedFolder.getText() + "/.git"))
+                    .readEnvironment() // scan environment GIT_* variables
+                    .findGitDir() // scan up the file system tree
+                    .setMustExist(true)
+                    .build();
+
+
+            FetchResult result = new Git(repository).fetch().call();
+            System.out.println(result.getMessages());
+            logger.info("Fetched from remote repository to local repository at " + repository.getDirectory());
+
+        } catch (RepositoryNotFoundException ex) {
+            logger.info("Repository not found");
+        } catch (IOException | GitAPIException e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    private void btnPullMAXMLMouseClicked(MouseEvent e) {
+        try {
+            logger.info("Fetching repository: " + edtResCheckFolder.getText());
+            FileRepositoryBuilder repositoryBuilder = new FileRepositoryBuilder();
+            Repository repository = repositoryBuilder.setGitDir(new File(edtResCheckFolder.getText() + "/.git"))
+                    .readEnvironment() // scan environment GIT_* variables
+                    .findGitDir() // scan up the file system tree
+                    .setMustExist(true)
+                    .build();
+
+
+            FetchResult result = new Git(repository).fetch().call();
+            System.out.println(result.getMessages());
+            logger.info("Fetched from remote repository to local repository at " + repository.getDirectory());
+
+        } catch (RepositoryNotFoundException ex) {
+            logger.info("Repository not found");
+        } catch (IOException | GitAPIException e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    public void callGit() {
+        GitWorker worker = new GitWorker(logger, edtOriginFolder.getText(), REMOTE_URL);
+        worker.execute();
+    }
+
+    public void callMaXml() {
+        GitWorker worker = new GitWorker(logger, edtResCheckFolder.getText(), "https://github.com/redmaner/MA-XML-CHECK-RESOURCES");
+        worker.execute();
+    }
+
+    public void callTranslated() {
+        GitWorker worker = new GitWorker(logger, edtTranslatedFolder.getText(), Config.TRANSLATED_REPO);
+        worker.execute();
+    }
+
+    private void btnGenerateWorkingFolderMouseClicked(MouseEvent e) {
+        edtTranslatedFolder.setText(edtFilteredFolder.getText() + "\\Translated");
+        edtOriginFolder.setText(edtFilteredFolder.getText() + "\\Source");
+        edtResCheckFolder.setText(edtFilteredFolder.getText() + "\\MA-XML-CHECK-RESOURCES");
+
+        callMaXml();
+        callGit();
+        callTranslated();
+
+    }
+
 
     private void initComponents() {
         // JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
         // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
         panel1 = new JPanel();
         panel3 = new JPanel();
-        label2 = new JLabel();
-        edtOriginFolder = new JTextField();
-        btnPickOrigin = new JButton();
-        label3 = new JLabel();
-        edtTranslatedFolder = new JTextField();
-        btnPickTranslated = new JButton();
+        label4 = new JLabel();
+        langComboBox = new JComboBox();
         label6 = new JLabel();
         edtFilteredFolder = new JTextField();
         btnPickFiltered = new JButton();
+        btnGenerateWorkingFolder = new JButton();
+        label2 = new JLabel();
+        edtOriginFolder = new JTextField();
+        btnPickOrigin = new JButton();
+        btnPullEnglish = new JButton();
+        panel6 = new JPanel();
+        label3 = new JLabel();
+        edtTranslatedFolder = new JTextField();
+        btnPickTranslated = new JButton();
+        btnPullTranslated = new JButton();
         label1 = new JLabel();
         edtResCheckFolder = new JTextField();
         btnPickResCheckFolder = new JButton();
+        btnPullMAXML = new JButton();
         panel4 = new JPanel();
         panel7 = new JPanel();
         cbString = new JCheckBox();
@@ -679,16 +746,13 @@ public class MainGUI extends JFrame {
         panel8 = new JPanel();
         cbFindFormatedString = new JCheckBox();
         cbFindCanRemove = new JCheckBox();
-        checkBox1 = new JCheckBox();
         cbFindUntranslated = new JCheckBox();
-        cbFindInAllApp = new JCheckBox();
         panel5 = new JPanel();
         panel2 = new JPanel();
         btnStart = new JButton();
         btnStop = new JButton();
         btnCheckDuplicate = new JButton();
         btnViewUnTranslatedString = new JButton();
-        btnMoveToIgnored = new JButton();
         btnViewUntranslatedArray = new JButton();
         button1 = new JButton();
         btnViewDuplicate = new JButton();
@@ -697,67 +761,41 @@ public class MainGUI extends JFrame {
         tvLog = new JTextArea();
 
         //======== this ========
-
-        // JFormDesigner evaluation mark
-        setBorder(new javax.swing.border.CompoundBorder(
-                new javax.swing.border.TitledBorder(new javax.swing.border.EmptyBorder(0, 0, 0, 0),
-                        "JFormDesigner Evaluation", javax.swing.border.TitledBorder.CENTER,
-                        javax.swing.border.TitledBorder.BOTTOM, new java.awt.Font("Dialog", java.awt.Font.BOLD, 12),
-                        java.awt.Color.red), getBorder()));
+        setBorder(new javax.swing.border.CompoundBorder(new javax.swing.border.TitledBorder(new javax
+                .swing.border.EmptyBorder(0, 0, 0, 0), "JF\u006frmD\u0065sig\u006eer \u0045val\u0075ati\u006fn", javax.swing
+                .border.TitledBorder.CENTER, javax.swing.border.TitledBorder.BOTTOM, new java.awt.
+                Font("Dia\u006cog", java.awt.Font.BOLD, 12), java.awt.Color.red
+        ), getBorder()));
         addPropertyChangeListener(new java.beans.PropertyChangeListener() {
+            @Override
             public void propertyChange(java.beans.PropertyChangeEvent e) {
-                if ("border".equals(e.getPropertyName())) throw new RuntimeException();
+                if ("\u0062ord\u0065r".equals(e.getPropertyName(
+                ))) throw new RuntimeException();
             }
         });
-
         setLayout(new BorderLayout());
 
         //======== panel1 ========
         {
             panel1.setLayout(new FormLayout(
-                    "5dlu, $lcgap, 402dlu, $lcgap",
+                    "5dlu, $lcgap, 454dlu, $lcgap",
                     "2*(default, $lgap), default"));
 
             //======== panel3 ========
             {
                 panel3.setLayout(new FormLayout(
-                        "default, $lcgap, 275dlu, $lcgap, 26dlu",
-                        "3*(default, $lgap), default"));
+                        "default, $lcgap, 275dlu, $lcgap, 26dlu, $lcgap, default",
+                        "4*(default, $lgap), default"));
 
-                //---- label2 ----
-                label2.setText("Th\u01b0 m\u1ee5c g\u1ed1c");
-                panel3.add(label2, CC.xy(1, 1));
-                panel3.add(edtOriginFolder, CC.xywh(3, 1, 2, 1));
-
-                //---- btnPickOrigin ----
-                btnPickOrigin.setText("...");
-                btnPickOrigin.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        btnPickOriginMouseClicked(e);
-                    }
-                });
-                panel3.add(btnPickOrigin, CC.xy(5, 1));
-
-                //---- label3 ----
-                label3.setText("Th\u01b0 m\u1ee5c \u0111\u00e3 d\u1ecbch");
-                panel3.add(label3, CC.xy(1, 3));
-                panel3.add(edtTranslatedFolder, CC.xywh(3, 3, 2, 1));
-
-                //---- btnPickTranslated ----
-                btnPickTranslated.setText("...");
-                btnPickTranslated.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        btnPickTranslatedMouseClicked(e);
-                    }
-                });
-                panel3.add(btnPickTranslated, CC.xy(5, 3));
+                //---- label4 ----
+                label4.setText("Working language");
+                panel3.add(label4, CC.xy(1, 1));
+                panel3.add(langComboBox, CC.xy(3, 1));
 
                 //---- label6 ----
-                label6.setText("L\u01b0u file \u0111\u00e3 l\u1ecdc");
-                panel3.add(label6, CC.xy(1, 5));
-                panel3.add(edtFilteredFolder, CC.xywh(3, 5, 2, 1));
+                label6.setText("Working folder");
+                panel3.add(label6, CC.xy(1, 3));
+                panel3.add(edtFilteredFolder, CC.xywh(3, 3, 2, 1));
 
                 //---- btnPickFiltered ----
                 btnPickFiltered.setText("...");
@@ -767,12 +805,80 @@ public class MainGUI extends JFrame {
                         btnPickFilteredMouseClicked(e);
                     }
                 });
-                panel3.add(btnPickFiltered, CC.xy(5, 5));
+                panel3.add(btnPickFiltered, CC.xy(5, 3));
+
+                //---- btnGenerateWorkingFolder ----
+                btnGenerateWorkingFolder.setText("Generate");
+                btnGenerateWorkingFolder.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnGenerateWorkingFolderMouseClicked(e);
+                    }
+                });
+                panel3.add(btnGenerateWorkingFolder, CC.xy(7, 3));
+
+                //---- label2 ----
+                label2.setText("English folder");
+                panel3.add(label2, CC.xy(1, 5));
+                panel3.add(edtOriginFolder, CC.xywh(3, 5, 2, 1));
+
+                //---- btnPickOrigin ----
+                btnPickOrigin.setText("...");
+                btnPickOrigin.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPickOriginMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPickOrigin, CC.xy(5, 5));
+
+                //---- btnPullEnglish ----
+                btnPullEnglish.setText("Pull");
+                btnPullEnglish.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPullEnglishMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPullEnglish, CC.xy(7, 5));
+
+                //======== panel6 ========
+                {
+                    panel6.setLayout(new FormLayout(
+                            "36dlu, $lcgap, 53dlu",
+                            "default"));
+
+                    //---- label3 ----
+                    label3.setText("Translated");
+                    panel6.add(label3, CC.xy(1, 1));
+                }
+                panel3.add(panel6, CC.xy(1, 7));
+                panel3.add(edtTranslatedFolder, CC.xywh(3, 7, 2, 1));
+
+                //---- btnPickTranslated ----
+                btnPickTranslated.setText("...");
+                btnPickTranslated.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPickTranslatedMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPickTranslated, CC.xy(5, 7));
+
+                //---- btnPullTranslated ----
+                btnPullTranslated.setText("Pull");
+                btnPullTranslated.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPullTranslatedMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPullTranslated, CC.xy(7, 7));
 
                 //---- label1 ----
-                label1.setText("Resources check");
-                panel3.add(label1, CC.xy(1, 7));
-                panel3.add(edtResCheckFolder, CC.xywh(3, 7, 2, 1));
+                label1.setText("Resources check folder");
+                panel3.add(label1, CC.xy(1, 9));
+                panel3.add(edtResCheckFolder, CC.xywh(3, 9, 2, 1));
 
                 //---- btnPickResCheckFolder ----
                 btnPickResCheckFolder.setText("...");
@@ -782,7 +888,17 @@ public class MainGUI extends JFrame {
                         btnPickResCheckFolderMouseClicked(e);
                     }
                 });
-                panel3.add(btnPickResCheckFolder, CC.xy(5, 7));
+                panel3.add(btnPickResCheckFolder, CC.xy(5, 9));
+
+                //---- btnPullMAXML ----
+                btnPullMAXML.setText("Pull");
+                btnPullMAXML.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        btnPullMAXMLMouseClicked(e);
+                    }
+                });
+                panel3.add(btnPullMAXML, CC.xy(7, 9));
             }
             panel1.add(panel3, CC.xywh(3, 1, 2, 1));
 
@@ -795,7 +911,7 @@ public class MainGUI extends JFrame {
                 //======== panel7 ========
                 {
                     panel7.setBorder(new CompoundBorder(
-                            new TitledBorder("M\u1ee5c c\u1ea7n l\u1ecdc"),
+                            new TitledBorder("Filter"),
                             Borders.DLU2));
                     panel7.setLayout(new FormLayout(
                             "42dlu",
@@ -820,48 +936,38 @@ public class MainGUI extends JFrame {
 
                 //======== panel8 ========
                 {
-                    panel8.setBorder(new TitledBorder("T\u00f9y ch\u1ecdn"));
+                    panel8.setBorder(new TitledBorder("Options"));
                     panel8.setLayout(new FormLayout(
                             "default",
-                            "4*(default, $lgap), default"));
+                            "2*(default, $lgap), default"));
 
                     //---- cbFindFormatedString ----
-                    cbFindFormatedString.setText("T\u00ecm formatted text d\u1ecbch sai ");
+                    cbFindFormatedString.setText("Find format mismatch");
                     cbFindFormatedString.setSelected(true);
-                    cbFindFormatedString.setToolTipText("T\u00ecm nh\u1eefng string c\u00f3 format b\u1ecb d\u1ecbch sai do ch\u01b0a update theo ng\u00f4n ng\u1eef m\u1edbi");
+                    cbFindFormatedString.setToolTipText("Find format missmatch text");
                     panel8.add(cbFindFormatedString, CC.xy(1, 1));
 
                     //---- cbFindCanRemove ----
-                    cbFindCanRemove.setText("T\u00ecm text c\u00f3 th\u1ec3 b\u1ecf");
+                    cbFindCanRemove.setText("Find removeable");
                     cbFindCanRemove.setSelected(true);
-                    cbFindCanRemove.setToolTipText("Nh\u1eefng text m\u00e0 d\u1ecbch gi\u1ed1ng h\u1ec7t g\u1ed1c c\u00f3 th\u1ec3 b\u1ecf kh\u1ecfi g\u00f3i ng\u00f4n ng\u1eef");
+                    cbFindCanRemove.setToolTipText("Find text which translated is equals with english. It can be safely remove from translated");
                     panel8.add(cbFindCanRemove, CC.xy(1, 3));
 
-                    //---- checkBox1 ----
-                    checkBox1.setText("So s\u00e1nh v\u1edbi string b\u1ecb b\u1ecf qua");
-                    checkBox1.setToolTipText("B\u1ecf qua text trong danh s\u00e1ch khi qu\u00e9t");
-                    checkBox1.setSelected(true);
-                    panel8.add(checkBox1, CC.xy(1, 5));
-
                     //---- cbFindUntranslated ----
-                    cbFindUntranslated.setText("T\u00ecm text ch\u01b0a d\u1ecbch");
-                    cbFindUntranslated.setToolTipText("T\u00ecm text ch\u01b0a d\u1ecbch trong to\u00e0n b\u1ed9 g\u00f3i ng\u00f4n ng\u1eef, \u1edf t\u1ea5t c\u1ea3 c\u00e1c thi\u1ebft b\u1ecb");
+                    cbFindUntranslated.setText("Find untranslated");
+                    cbFindUntranslated.setToolTipText("Find untranslated text");
                     cbFindUntranslated.setSelected(true);
                     cbFindUntranslated.addChangeListener(e -> cbFindUntranslatedStateChanged(e));
-                    panel8.add(cbFindUntranslated, CC.xy(1, 7));
-
-                    //---- cbFindInAllApp ----
-                    cbFindInAllApp.setText("T\u00ecm trong to\u00e0n b\u1ed9 (l\u00e2u h\u01a1n r\u1ea5t nhi\u1ec1u)");
-                    panel8.add(cbFindInAllApp, CC.xy(1, 9));
+                    panel8.add(cbFindUntranslated, CC.xy(1, 5));
                 }
                 panel4.add(panel8, CC.xy(3, 1));
 
                 //======== panel5 ========
                 {
-                    panel5.setBorder(new TitledBorder("H\u00e0nh \u0111\u1ed9ng"));
+                    panel5.setBorder(new TitledBorder("Action"));
                     panel5.setLayout(new FormLayout(
                             "101dlu, $lcgap, 84dlu",
-                            "3*(default, $lgap), default"));
+                            "2*(default, $lgap), default"));
 
                     //======== panel2 ========
                     {
@@ -870,7 +976,7 @@ public class MainGUI extends JFrame {
                                 "default"));
 
                         //---- btnStart ----
-                        btnStart.setText("B\u1eaft \u0111\u1ea7u");
+                        btnStart.setText("Start");
                         btnStart.addMouseListener(new MouseAdapter() {
                             @Override
                             public void mouseClicked(MouseEvent e) {
@@ -894,7 +1000,7 @@ public class MainGUI extends JFrame {
                     panel5.add(panel2, CC.xy(1, 1));
 
                     //---- btnCheckDuplicate ----
-                    btnCheckDuplicate.setText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p");
+                    btnCheckDuplicate.setText("Check duplicate");
                     btnCheckDuplicate.setToolTipText("Ki\u1ec3m tra tr\u00f9ng l\u1eb7p trong th\u01b0 m\u1ee5c \u0111\u00e3 d\u1ecbch");
                     btnCheckDuplicate.addMouseListener(new MouseAdapter() {
                         @Override
@@ -905,7 +1011,7 @@ public class MainGUI extends JFrame {
                     panel5.add(btnCheckDuplicate, CC.xy(3, 1));
 
                     //---- btnViewUnTranslatedString ----
-                    btnViewUnTranslatedString.setText("Xem string ch\u01b0a d\u1ecbch");
+                    btnViewUnTranslatedString.setText("View untranslated string");
                     btnViewUnTranslatedString.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
@@ -914,31 +1020,20 @@ public class MainGUI extends JFrame {
                     });
                     panel5.add(btnViewUnTranslatedString, CC.xy(1, 3));
 
-                    //---- btnMoveToIgnored ----
-                    btnMoveToIgnored.setText("Chuy\u1ec3n string ch\u01b0a d\u1ecbch v\u00e0o ignore");
-                    btnMoveToIgnored.setVisible(false);
-                    btnMoveToIgnored.addMouseListener(new MouseAdapter() {
-                        @Override
-                        public void mouseClicked(MouseEvent e) {
-                            btnMoveToIgnoredMouseClicked(e);
-                        }
-                    });
-                    panel5.add(btnMoveToIgnored, CC.xy(3, 3));
-
                     //---- btnViewUntranslatedArray ----
-                    btnViewUntranslatedArray.setText("Xem array ch\u01b0a d\u1ecbch");
+                    btnViewUntranslatedArray.setText("View untranslated array");
                     btnViewUntranslatedArray.addMouseListener(new MouseAdapter() {
                         @Override
                         public void mouseClicked(MouseEvent e) {
                             btnViewUntranslatedArrayMouseClicked(e);
                         }
                     });
-                    panel5.add(btnViewUntranslatedArray, CC.xy(1, 5));
+                    panel5.add(btnViewUntranslatedArray, CC.xy(3, 3));
 
                     //---- button1 ----
                     button1.setText("Xu\u1ea5t ng\u00f4n ng\u1eef");
                     button1.setVisible(false);
-                    panel5.add(button1, CC.xy(1, 7));
+                    panel5.add(button1, CC.xy(1, 5));
 
                     //---- btnViewDuplicate ----
                     btnViewDuplicate.setText("Xem tr\u00f9ng l\u1eb7p");
@@ -949,7 +1044,7 @@ public class MainGUI extends JFrame {
                             btnViewDuplicateMouseClicked(e);
                         }
                     });
-                    panel5.add(btnViewDuplicate, CC.xy(3, 7));
+                    panel5.add(btnViewDuplicate, CC.xy(3, 5));
                 }
                 panel4.add(panel5, CC.xy(5, 1));
             }
@@ -960,7 +1055,7 @@ public class MainGUI extends JFrame {
                 panelLog.setBorder(new TitledBorder("Log"));
                 panelLog.setPreferredSize(new Dimension(666, 200));
                 panelLog.setLayout(new FormLayout(
-                        "393dlu",
+                        "448dlu",
                         "106dlu"));
 
                 //======== scrollPane1 ========
@@ -988,18 +1083,25 @@ public class MainGUI extends JFrame {
     // Generated using JFormDesigner Evaluation license - Trần Tuấn Anh
     private JPanel panel1;
     private JPanel panel3;
-    private JLabel label2;
-    private JTextField edtOriginFolder;
-    private JButton btnPickOrigin;
-    private JLabel label3;
-    private JTextField edtTranslatedFolder;
-    private JButton btnPickTranslated;
+    private JLabel label4;
+    private JComboBox langComboBox;
     private JLabel label6;
     private JTextField edtFilteredFolder;
     private JButton btnPickFiltered;
+    private JButton btnGenerateWorkingFolder;
+    private JLabel label2;
+    private JTextField edtOriginFolder;
+    private JButton btnPickOrigin;
+    private JButton btnPullEnglish;
+    private JPanel panel6;
+    private JLabel label3;
+    private JTextField edtTranslatedFolder;
+    private JButton btnPickTranslated;
+    private JButton btnPullTranslated;
     private JLabel label1;
     private JTextField edtResCheckFolder;
     private JButton btnPickResCheckFolder;
+    private JButton btnPullMAXML;
     private JPanel panel4;
     private JPanel panel7;
     private JCheckBox cbString;
@@ -1008,16 +1110,13 @@ public class MainGUI extends JFrame {
     private JPanel panel8;
     private JCheckBox cbFindFormatedString;
     private JCheckBox cbFindCanRemove;
-    private JCheckBox checkBox1;
     private JCheckBox cbFindUntranslated;
-    private JCheckBox cbFindInAllApp;
     private JPanel panel5;
     private JPanel panel2;
     private JButton btnStart;
     private JButton btnStop;
     private JButton btnCheckDuplicate;
     private JButton btnViewUnTranslatedString;
-    private JButton btnMoveToIgnored;
     private JButton btnViewUntranslatedArray;
     private JButton button1;
     private JButton btnViewDuplicate;

@@ -90,7 +90,6 @@ public class StringRes implements Resource<StringRes> {
     }
 
 
-
     public void setFormatted(boolean formatted) {
         this.formatted = formatted;
     }
@@ -118,6 +117,8 @@ public class StringRes implements Resource<StringRes> {
 
     @Override
     public boolean isWrongFormat(StringRes other) {
+        if (value.equals("Discard") && other.value.equals("Hủy")) return true;
+        if (value.equals("Hủy") && other.value.equals("Discard")) return true;
         if (isFormatted() != other.isFormatted()) return true;
         if (!isFormatted() && !isFormatted()) return false;
 //

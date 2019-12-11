@@ -12,11 +12,21 @@ import org.xml.sax.SAXException;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryNotEmptyException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.util.Arrays;
@@ -28,6 +38,38 @@ import java.util.stream.Collectors;
 import static com.anhtt.miui.translation.helper.model.TargetDevice.distinctByKey;
 
 public class Utils {
+    public static void delete(File file) {
+        if (file == null || !file.exists()) return;
+        File[] listFile = file.listFiles();
+        if (listFile == null) return;
+        for (File childFile : listFile) {
+
+            if (childFile.isDirectory()) {
+                delete(childFile);
+            } else {
+                Path fp = childFile.toPath();
+                try {
+                    Files.delete(fp);
+                } catch (NoSuchFileException x) {
+                    System.err.format("%s: no such" + " file or directory%n", fp);
+                } catch (DirectoryNotEmptyException x) {
+                    System.err.format("%s not empty%n", fp);
+                } catch (IOException x) {
+                    // File permission problems are caught here.
+                    x.printStackTrace();
+                }
+            }
+        }
+        try {
+
+            if (!file.delete()) {
+
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
     public static String nodeToString(Node node) {
         if (node.getChildNodes().getLength() == 1) return node.getTextContent();
         StringWriter sw = new StringWriter();
@@ -37,6 +79,7 @@ public class Utils {
         }
         return sw.toString();
     }
+
     public static boolean containsHanScript(String s) {
         for (int i = 0; i < s.length(); ) {
             int codepoint = s.codePointAt(i);
@@ -47,6 +90,7 @@ public class Utils {
         }
         return false;
     }
+
     public static String nodeListToString(NodeList nodes) throws TransformerException {
         DOMSource source = new DOMSource();
         StringWriter writer = new StringWriter();

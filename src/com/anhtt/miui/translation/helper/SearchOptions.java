@@ -7,7 +7,6 @@ public class SearchOptions {
 
     public static boolean filterFormatted;
     public static boolean filterUnTranslated;
-    public static boolean deepFilterForUnTranslated;
     public static boolean filterCanRemove;
     public static boolean compareWithMaXml;
 

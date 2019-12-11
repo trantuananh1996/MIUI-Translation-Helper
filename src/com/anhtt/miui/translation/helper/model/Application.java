@@ -1,5 +1,6 @@
 package com.anhtt.miui.translation.helper.model;
 
+import com.anhtt.miui.translation.helper.Config;
 import com.anhtt.miui.translation.helper.MainGUI;
 import com.anhtt.miui.translation.helper.SearchOptions;
 import com.anhtt.miui.translation.helper.model.res.ApplicationStringRes;
@@ -256,8 +257,9 @@ public class Application {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi-rVN");
+        if (!valueFolder.exists())
+            valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
+        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\plurals.xml");
         if (!file.exists()) return;
@@ -281,8 +283,8 @@ public class Application {
         factory.setIgnoringElementContentWhitespace(true);
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi-rVN");
+        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
+        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
         if (!file.exists()) return;
@@ -302,8 +304,8 @@ public class Application {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\values-vi-rVN");
+        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
+        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
         if (!file.exists()) return;
@@ -492,7 +494,7 @@ public class Application {
         else result = hasTranslated;
 
         if (!isSpecific && hasTranslated == null && hasTranslatedInAll != null) {
-            if (!hasTranslatedInAll.getName().contains("app_name") && !originPlural.isWrongFormat(hasTranslatedInAll)) {
+            if (!hasTranslatedInAll.getName().equals("app_name") && !originPlural.isWrongFormat(hasTranslatedInAll)) {
                 UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "plurals.xml" + hasTranslatedInAll.getName());
                 if (unTranslateable == null)
                     mapTranslatedFromOtherPlural.put(originPlural.getName(), hasTranslatedInAll);
@@ -513,7 +515,7 @@ public class Application {
         else result = hasTranslated;
 
         if (!isSpecific && hasTranslated == null && hasTranslatedInAll != null) {
-            if (!hasTranslatedInAll.getName().contains("app_name") && !originArray.isWrongFormat(hasTranslatedInAll)) {
+            if (!hasTranslatedInAll.getName().equals("app_name") && !originArray.isWrongFormat(hasTranslatedInAll)) {
                 UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "arrays.xml" + hasTranslatedInAll.getName());
                 if (unTranslateable == null)
                     mapTranslatedFromOtherArray.put(originArray.getName(), hasTranslatedInAll);
@@ -537,7 +539,7 @@ public class Application {
         else result = hasTranslated;
 
         if (!isSpecific && hasTranslated == null && hasTranslatedInAll != null) {
-            if (!hasTranslatedInAll.getName().contains("app_name") && !resourceToFind.isWrongFormat(hasTranslatedInAll)) {
+            if (!hasTranslatedInAll.getName().equals("app_name") && !resourceToFind.isWrongFormat(hasTranslatedInAll)) {
                 UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "strings.xml" + hasTranslatedInAll.getName());
                 if (unTranslateable == null) {
                     if (hasTranslatedInAll.getUntranslatedString().equals(resourceToFind.getValue())) {
@@ -551,8 +553,9 @@ public class Application {
 //        }
         return result;
     }
+
     public static boolean isProbablyArabic(String s) {
-        for (int i = 0; i < s.length();) {
+        for (int i = 0; i < s.length(); ) {
             int c = s.codePointAt(i);
             if (c >= 0x0600 && c <= 0x06E0)
                 return true;
@@ -560,6 +563,7 @@ public class Application {
         }
         return false;
     }
+
     public static boolean isStringContainsLatinCharactersOnly(final String iStringToCheck) {
         return iStringToCheck.matches("^[a-zA-Z0-9.]+$");
     }

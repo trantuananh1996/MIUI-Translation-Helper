@@ -57,7 +57,8 @@ public class ArrayRes implements Resource<ArrayRes> {
                 || name.endsWith("_devices")
                 || name.contains("_region")
                 || name.startsWith("prefValues")
-                || name.startsWith("pref_");
+                || name.startsWith("pref_")
+                ;
 
         List<Item> items = new ArrayList<>();
         NodeList list = element.getChildNodes();
