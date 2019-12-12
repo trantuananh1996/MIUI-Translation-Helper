@@ -89,7 +89,7 @@ public class MainGUI extends JFrame {
         langComboBox.addActionListener(e -> {
             Language language = Language.values()[langComboBox.getSelectedIndex()];
             Config.PRIMARY_RES_FOLDER = "values-" + language.getLocale();
-            Config.SECONDARY_RES_FOLDER = "values-" + language.getLocale() + "-" + language.getCode();
+            Config.SECONDARY_RES_FOLDER = "values-" + language.getLocale() + "-r" + language.getCode();
             Config.FILTERED_PATH = "Filtered-" + language.getCode();
             Config.TRANSLATED_REPO = language.getGitUrl();
         });
