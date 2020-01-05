@@ -22,6 +22,7 @@ public class SourceDevice {
         try {
             File file = new File(path);
             name = file.getName();
+
 //            if (!name.contains("Diff") && !name.contains("extras") && name.contains("_stable") && !name.contains(".") && !file.isHidden())
 //                if (isValidDevice(name.replaceAll("_stable", "")))
 //                    return name.replaceAll("_stable", "");
@@ -37,9 +38,38 @@ public class SourceDevice {
     }
 
     private static boolean isValidDevice(String name) {//Ignore very old device
-        List<String> strings = Arrays.asList("cepheus", "davinci", "dipper", "equuleus", "chiron", "grus", "jason", "lavender"
-                , "nitrogen", "perseus", "platina", "polaris", "pyxis", "raphael", "sakura", "sagit", "sirius", "ursa", "violet", "wayne", "whyred");
-        return strings.contains(name);
+//        return true;
+        List<String> strings = Arrays.asList(
+//                "begonia",
+                "cepheus",
+                "crux",
+                "davinci",
+                "dipper",
+                "equuleus",
+                "chiron",
+                "ginkgo",
+                "grus",
+                "jason",
+                "laurus",
+                "lavender",
+                "nitrogen",
+                "olive",
+                "perseus",
+                "phoenix",
+                "platina",
+                "polaris",
+                "pyxis",
+                "raphael",
+                "sakura",
+                "sagit",
+                "sirius",
+                "tucana",
+                "ursa",
+                "violet",
+                "wayne",
+                "whyred");
+        return strings.stream()
+                .anyMatch(name::contains);
     }
 
     @Nullable

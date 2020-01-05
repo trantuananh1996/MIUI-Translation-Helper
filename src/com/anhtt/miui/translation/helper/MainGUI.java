@@ -14,7 +14,6 @@ import com.jgoodies.forms.layout.FormLayout;
 import com.sun.istack.internal.Nullable;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.errors.RepositoryNotFoundException;
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.eclipse.jgit.transport.FetchResult;
@@ -255,8 +254,8 @@ public class MainGUI extends JFrame {
                         groupPluralFromAll(application.getName(), application.getMapTranslatedFromOtherPlural(), sourceDevice, untranslatedFromAllApplications);
                         groupPlural(application.getName(), application.getMapUnTranslatedPlurals(), sourceDevice, untranslatedApplications);
                     }
-//                    if (cbFindCanRemove.isSelected())
-//                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getMapOriginEqualTranslatedStrings());
+                    if (cbFindCanRemove.isSelected())
+                        Utils.writeStringsToFile(filteredFolder.getAbsolutePath() + "\\Can Remove\\" + sourceDevice.getName() + "\\" + application.getName(), application.getMapOriginEqualTranslatedStrings());
 
                 });
             });
