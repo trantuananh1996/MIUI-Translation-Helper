@@ -62,6 +62,10 @@ public class StringRes implements Resource<StringRes> {
                     || name.contains("alisdk_message")
                     || name.contains("com_taobao_tae_sdk")
                     || name.contains("msp_")
+                    || name.equals("download_running_percent")
+                    || name.equals("process_kernel_label")
+                    || name.contains("exo_track_")
+                    || name.equals("ellipsis")
                     || value.contains("@string/")
                     || value.contains("@android:string/")
                     || value.contains("sans-serif")
@@ -76,6 +80,8 @@ public class StringRes implements Resource<StringRes> {
                     || value.equals("%1$s")
                     || value.equals("%2$s")
                     || value.equals("%3$s")
+                    ||value.equals("true")
+                    ||value.equals("false")
                     || (!containsHanScript(value) && value.length() >= 15 && !value.contains(" "))
                     || value.trim().replaceAll("\n", "").replaceAll("\t", "").length() == 0
             ) return null;

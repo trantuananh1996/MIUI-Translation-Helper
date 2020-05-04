@@ -259,7 +259,8 @@ public class Application {
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
         if (!valueFolder.exists())
             valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
+        if (!valueFolder.exists())
+            valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\plurals.xml");
         if (!file.exists()) return;
@@ -283,8 +284,10 @@ public class Application {
         factory.setIgnoringElementContentWhitespace(true);
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
+        if (!valueFolder.exists())
+            valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
+        if (!valueFolder.exists())
+            valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
         if (!file.exists()) return;
@@ -304,8 +307,10 @@ public class Application {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
         File valueFolder = new File(translation.getAbsolutePath() + "\\res\\values");
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
-        if (!valueFolder.exists()) valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
+        if (!valueFolder.exists())
+            valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.PRIMARY_RES_FOLDER);
+        if (!valueFolder.exists())
+            valueFolder = new File(translation.getAbsolutePath() + "\\res\\" + Config.SECONDARY_RES_FOLDER);
         if (!valueFolder.exists()) return;
         File file = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
         if (!file.exists()) return;
@@ -542,7 +547,7 @@ public class Application {
             if (!hasTranslatedInAll.getName().equals("app_name") && !resourceToFind.isWrongFormat(hasTranslatedInAll)) {
                 UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "strings.xml" + hasTranslatedInAll.getName());
                 if (unTranslateable == null) {
-                    if (hasTranslatedInAll.getUntranslatedString().equals(resourceToFind.getValue())) {
+                    if (hasTranslatedInAll.getUntranslatedString().toLowerCase().trim().equals(resourceToFind.getValue().toLowerCase().trim())) {
                         mapTranslatedFromOtherString.put(resourceToFind.getName(), hasTranslatedInAll);
                     } else result = null;
                 }

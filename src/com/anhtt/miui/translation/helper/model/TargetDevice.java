@@ -110,8 +110,8 @@ public class TargetDevice {
                                         if (engString != null) {
                                             ApplicationStringRes applicationStringRes = new ApplicationStringRes(stringRes.getName(), stringRes.getValue());
                                             applicationStringRes.setUntranslatedString(engString.getValue());
-//
-                                            originDevice.getMapAllStrings().put(stringRes.getName(), applicationStringRes);
+
+                                            originDevice.getMapAllStrings().putIfAbsent(stringRes.getName(), applicationStringRes);
                                         }
                                     }
 

@@ -76,8 +76,8 @@ public class MainGUI extends JFrame {
         btnViewUntranslatedArray.setVisible(false);
         btnViewUnTranslatedString.setVisible(false);
         //TODO: For fast testing
-        edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv11-XML-Compare");
-        edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-11-XML-Vietnamese\\Vietnamese");
+        edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv12-XML-Compare");
+        edtTranslatedFolder.setText("C:\\Users\\trant\\Documents\\Github\\MIUI-12-XML-Vietnamese\\Vietnamese");
         edtFilteredFolder.setText("C:\\Users\\trant\\Documents\\Filtered");
         edtResCheckFolder.setText("C:\\Users\\trant\\Documents\\Github\\MA-XML-CHECK-RESOURCES");
 
@@ -100,7 +100,7 @@ public class MainGUI extends JFrame {
 //        }
     }
 
-    private static final String REMOTE_URL = "https://github.com/ingbrzy/Xiaomi.eu-MIUIv11-XML-Compare.git";
+    private static final String REMOTE_URL = "https://github.com/ingbrzy/Xiaomi.eu-MIUIv12-XML-Compare.git";
 
 
     public static void main(String[] args) {
@@ -223,7 +223,7 @@ public class MainGUI extends JFrame {
             File targetDeviceFolder = new File(targetLangFolder.getAbsolutePath() + "\\main");
             if (!targetDeviceFolder.exists()) return null;
 //            HashMap<String, SourceDevice> sourceDevicesWithoutCompare = createDevices(this, sourceCompareFolder, targetDevice, targetSeparateSourceDevices, false);
-            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false, SourceDevice.create(sourceCompareFolder.getAbsolutePath() + "/sirius"));
+            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false, SourceDevice.create(sourceCompareFolder.getAbsolutePath() + "/dipper"));
 
 
             File specificDevicesFolder = new File(targetLangFolder.getAbsolutePath() + "\\device");
@@ -289,6 +289,11 @@ public class MainGUI extends JFrame {
             logger.info("Done. Check working folder for result");
             btnViewUntranslatedArray.setVisible(true);
             btnViewUnTranslatedString.setVisible(true);
+
+            Utils.writeUnTranslatedFromAllStringToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedFromOther", untranslatedFromAllApplications);
+//            Utils.writeUnTranslatedFromAllArrayToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedArrayFromOther", untranslatedFromAllApplications);
+//            Utils.writeUnTranslatedFromAllPluralToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedPluralFromOther", untranslatedFromAllApplications);
+
         }
     }
 
@@ -401,11 +406,18 @@ public class MainGUI extends JFrame {
     }
 
     private Map<String, UnTranslateable> createUnTranslateable() throws IOException, SAXException, ParserConfigurationException {
+        Map<String, UnTranslateable> unTranslateables = getStringUnTranslateableMap(edtResCheckFolder.getText() + "\\MIUI12\\MIUI12_untranslateable.xml");
+        Map<String, UnTranslateable> unTranslateables_locale = getStringUnTranslateableMap(edtResCheckFolder.getText() + "\\MIUI12\\MIUI12_untranslateable_vi.xml");
+        unTranslateables.putAll(unTranslateables_locale);
+        return unTranslateables;
+    }
+
+    private Map<String, UnTranslateable> getStringUnTranslateableMap(String fileName) throws ParserConfigurationException, SAXException, IOException {
         Map<String, UnTranslateable> unTranslateables = new HashMap<>();
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder docBuilder = factory.newDocumentBuilder();
 
-        File sourceFile = new File(edtResCheckFolder.getText() + "\\MIUI11\\MIUI11_untranslateable.xml");
+        File sourceFile = new File(fileName);
         if (!sourceFile.exists()) return new HashMap<>();
         Document doc = docBuilder.parse(sourceFile);
         NodeList list = doc.getElementsByTagName("item");
