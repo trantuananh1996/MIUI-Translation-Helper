@@ -74,6 +74,7 @@ public class MainGUI extends JFrame {
         pack();
         setLocationRelativeTo(getOwner());
         btnViewUntranslatedArray.setVisible(false);
+        btnViewUntranslatedPlural.setVisible(false);
         btnViewUnTranslatedString.setVisible(false);
         //TODO: For fast testing
         edtOriginFolder.setText("C:\\Users\\trant\\Documents\\Github\\Xiaomi.eu-MIUIv12-XML-Compare");
@@ -223,7 +224,7 @@ public class MainGUI extends JFrame {
             File targetDeviceFolder = new File(targetLangFolder.getAbsolutePath() + "\\main");
             if (!targetDeviceFolder.exists()) return null;
 //            HashMap<String, SourceDevice> sourceDevicesWithoutCompare = createDevices(this, sourceCompareFolder, targetDevice, targetSeparateSourceDevices, false);
-            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false, SourceDevice.create(sourceCompareFolder.getAbsolutePath() + "/dipper"));
+            targetDevice = TargetDevice.create(targetDeviceFolder.getAbsolutePath(), false, SourceDevice.create(sourceCompareFolder.getAbsolutePath() + "/cmi"), SourceDevice.create(sourceCompareFolder.getAbsolutePath() + "/umi"));
 
 
             File specificDevicesFolder = new File(targetLangFolder.getAbsolutePath() + "\\device");
@@ -288,11 +289,12 @@ public class MainGUI extends JFrame {
         protected void done() {
             logger.info("Done. Check working folder for result");
             btnViewUntranslatedArray.setVisible(true);
+            btnViewUntranslatedPlural.setVisible(true);
             btnViewUnTranslatedString.setVisible(true);
 
             Utils.writeUnTranslatedFromAllStringToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedFromOther", untranslatedFromAllApplications);
-//            Utils.writeUnTranslatedFromAllArrayToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedArrayFromOther", untranslatedFromAllApplications);
-//            Utils.writeUnTranslatedFromAllPluralToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedPluralFromOther", untranslatedFromAllApplications);
+            Utils.writeUnTranslatedFromAllArrayToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedArrayFromOther", untranslatedFromAllApplications);
+            Utils.writeUnTranslatedFromAllPluralToExistFile(targetLangFolder.getAbsolutePath() + "\\main", filteredFolder.getAbsolutePath() + "\\UnTranslatedPluralFromOther", untranslatedFromAllApplications);
 
         }
     }
@@ -518,7 +520,7 @@ public class MainGUI extends JFrame {
         logger.info("Checking duplicates");
         File transDevicesFolder = new File(edtTranslatedFolder.getText() + "\\main");
         if (!transDevicesFolder.exists()) return;
-        targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false, null);
+        targetDevice = TargetDevice.create(transDevicesFolder.getAbsolutePath(), false);
         if (targetDevice == null) return;
         targetDevice.getApps().forEach(application -> {
             application.setDuplicateString(getDuplicates(application.getMapOriginStrings()));
@@ -587,6 +589,34 @@ public class MainGUI extends JFrame {
                     logger.info("Converting " + applications.get(index).getName());
                     try {
                         Utils.convertUntranslateableArrayFile(edtFilteredFolder.getText() + "\\" + Config.FILTERED_PATH + "\\UnTranslatedArray\\", applications.get(index).getName());
+                    } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+            }
+        });
+        f.add(list);
+        f.pack();
+        f.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        f.setLocationRelativeTo(null);
+        f.setVisible(true);
+    }
+
+    private void btnViewUntranslatedPluralMouseClicked(MouseEvent e) {
+        JFrame f = new JFrame("Test");
+        List<WrongApplication> applications = untranslatedApplications.stream().filter(wrongApplication -> wrongApplication.getWrongTranslatedOriginPlurals().size() > 0)
+                .collect(Collectors.toList());
+        JList<WrongApplication> list = new JList(applications.toArray());
+        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        list.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent evt) {
+                JList list = (JList) evt.getSource();
+                if (evt.getClickCount() == 2) {
+                    int index = list.locationToIndex(evt.getPoint());
+                    logger.info("Converting " + applications.get(index).getName());
+                    try {
+                        Utils.convertUntranslateablePluralFile(edtFilteredFolder.getText() + "\\" + Config.FILTERED_PATH + "\\UnTranslatedPlural\\", applications.get(index).getName());
                     } catch (ParserConfigurationException | IOException | SAXException | TransformerException e1) {
                         e1.printStackTrace();
                     }
@@ -765,6 +795,7 @@ public class MainGUI extends JFrame {
         btnCheckDuplicate = new JButton();
         btnViewUnTranslatedString = new JButton();
         btnViewUntranslatedArray = new JButton();
+        btnViewUntranslatedPlural = new JButton();
         button1 = new JButton();
         btnViewDuplicate = new JButton();
         panelLog = new JPanel();
@@ -1040,7 +1071,15 @@ public class MainGUI extends JFrame {
                         }
                     });
                     panel5.add(btnViewUntranslatedArray, CC.xy(3, 3));
-
+                    //---- btnViewUntranslatedPlural ----
+                    btnViewUntranslatedPlural.setText("View untranslated plurals");
+                    btnViewUntranslatedPlural.addMouseListener(new MouseAdapter() {
+                        @Override
+                        public void mouseClicked(MouseEvent e) {
+                            btnViewUntranslatedPluralMouseClicked(e);
+                        }
+                    });
+                    panel5.add(btnViewUntranslatedPlural, CC.xy(1, 4));
                     //---- button1 ----
                     button1.setText("Xu\u1ea5t ng\u00f4n ng\u1eef");
                     button1.setVisible(false);
@@ -1129,6 +1168,7 @@ public class MainGUI extends JFrame {
     private JButton btnCheckDuplicate;
     private JButton btnViewUnTranslatedString;
     private JButton btnViewUntranslatedArray;
+    private JButton btnViewUntranslatedPlural;
     private JButton button1;
     private JButton btnViewDuplicate;
     private JPanel panelLog;

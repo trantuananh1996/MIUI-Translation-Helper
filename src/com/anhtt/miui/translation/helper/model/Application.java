@@ -3,7 +3,6 @@ package com.anhtt.miui.translation.helper.model;
 import com.anhtt.miui.translation.helper.Config;
 import com.anhtt.miui.translation.helper.MainGUI;
 import com.anhtt.miui.translation.helper.SearchOptions;
-import com.anhtt.miui.translation.helper.model.res.ApplicationStringRes;
 import com.anhtt.miui.translation.helper.model.res.ArrayRes;
 import com.anhtt.miui.translation.helper.model.res.PluralRes;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
@@ -21,6 +20,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class Application {
     private String name;
@@ -233,7 +233,10 @@ public class Application {
     @Nullable
     public static Application create(String path, boolean isApplyFilter) {
         String deviceName = getDeviceName(path);
-        if (deviceName == null || deviceName.isEmpty()) return null;
+        if (deviceName == null || deviceName.isEmpty()
+                || deviceName.toLowerCase().contains("cit.apk") || deviceName.toLowerCase().contains("factorykittest.apk")
+        )
+            return null;
 
         File file = new File(path);
 
@@ -340,6 +343,17 @@ public class Application {
 //            }
 //            return;
 //        }
+
+        if (translatedApp == null) {
+
+            String pathToCreate = transDevices.getPath() + "\\" + name + "\\res\\values-vi";
+            File file = new File(pathToCreate);
+            if (!file.exists()) {
+                file.mkdirs();
+
+            }
+            translatedApp = Application.create(transDevices.getPath() + "\\" + name, false);
+        }
         if (SearchOptions.searchString)
             filterString(specificedApp, translatedApp, transDevices);
 
@@ -375,12 +389,18 @@ public class Application {
                         if (specificPlural != null) {//Dịch sai mà đã có dịch riêng biệt
                             boolean isWrongSpecificTranslation = originPlural.isWrongFormat(specificPlural);
                             if (isWrongSpecificTranslation) {//Dịch riêng biệt cũng sai nốt
+                                UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "plurals.xml" + originPlural.getName());
+                                if (unTranslateable == null) {
+                                    mapWrongTranslatedOriginPlurals.put(key, originPlural);
+                                    mapWrongTranslatedPlurals.put(key, translatedPlural);
+                                }
+                            }
+                        } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
+                            UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "plurals.xml" + originPlural.getName());
+                            if (unTranslateable == null) {
                                 mapWrongTranslatedOriginPlurals.put(key, originPlural);
                                 mapWrongTranslatedPlurals.put(key, translatedPlural);
                             }
-                        } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
-                            mapWrongTranslatedOriginPlurals.put(key, originPlural);
-                            mapWrongTranslatedPlurals.put(key, translatedPlural);
                         }
                     } else if (originPlural.getItems().equals(translatedPlural.getItems())
                             && originPlural.getName().equals(translatedPlural.getName())) {
@@ -417,12 +437,18 @@ public class Application {
                         if (specificArray != null) {//Dịch sai mà đã có dịch riêng biệt
                             boolean isWrongSpecificTranslation = originArray.isWrongFormat(specificArray);
                             if (isWrongSpecificTranslation) {//Dịch riêng biệt cũng sai nốt
+                                UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "arrays.xml" + originArray.getName());
+                                if (unTranslateable == null) {
+                                    mapWrongTranslatedOriginArrays.put(key, originArray);
+                                    mapWrongTranslatedArrays.put(key, translatedArray);
+                                }
+                            }
+                        } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
+                            UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "arrays.xml" + originArray.getName());
+                            if (unTranslateable == null) {
                                 mapWrongTranslatedOriginArrays.put(key, originArray);
                                 mapWrongTranslatedArrays.put(key, translatedArray);
                             }
-                        } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
-                            mapWrongTranslatedOriginArrays.put(key, originArray);
-                            mapWrongTranslatedArrays.put(key, translatedArray);
                         }
                     } else if (originArray.getItems().equals(translatedArray.getItems())
                             && originArray.getName().equals(translatedArray.getName())) {
@@ -462,17 +488,24 @@ public class Application {
                         if (specificString != null) {//Dịch sai mà đã có dịch riêng biệt
                             boolean isWrongSpecificTranslation = originString.isWrongFormat(specificString);
                             if (isWrongSpecificTranslation) {//Dịch riêng biệt cũng sai nốt
+                                UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "strings.xml" + originString.getName());
+                                if (unTranslateable == null) {
+                                    mapWrongTranslatedOriginStrings.put(key, originString);
+                                    mapWrongTranslatedStrings.put(key, translatedString);
+                                }
+                            }
+                        } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
+                            UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "strings.xml" + originString.getName());
+                            if (unTranslateable == null) {
                                 mapWrongTranslatedOriginStrings.put(key, originString);
                                 mapWrongTranslatedStrings.put(key, translatedString);
                             }
-                        } else {//Dịch sai mà cũng ko có cả dịch riêng luôn
-                            mapWrongTranslatedOriginStrings.put(key, originString);
-                            mapWrongTranslatedStrings.put(key, translatedString);
                         }
                     } else if (originString.getValue().equals(translatedString.getValue())
                             && originString.getName().equals(translatedString.getName())) {
                         //Có dịch nhưng mà dịch cũng như ko vì nó giống nhau
-                        mapOriginEqualTranslatedStrings.put(key, originString);
+                        if (!key.equals("app_name"))
+                            mapOriginEqualTranslatedStrings.put(key, originString);
                     } else {
                         //Dịch rồi, mà lại còn đúng nữa thì làm gì ở đây nữa =))
                     }
@@ -532,12 +565,19 @@ public class Application {
 
     @Nullable
     private StringRes findTranslatedString(StringRes resourceToFind, Application translatedApp, TargetDevice transDevices, boolean isSpecific) {
+        if (resourceToFind.getName().equals("app_name")) return resourceToFind;
         if (translatedApp == null) return null;
 //        List<StringRes> stringToStream = !isSpecific && SearchOptions.deepFilterForUnTranslated ? transDevices.getAllStrings() : translatedApp.getOriginString();
 
         StringRes hasTranslated = translatedApp.getMapOriginStrings().get(resourceToFind.getName());
 
-        ApplicationStringRes hasTranslatedInAll = transDevices.getMapAllStrings().get(resourceToFind.getName());
+        List<String> translatedStringInAllDevice = transDevices.getMapAllStrings().get(resourceToFind.getValue().toLowerCase());
+        String str = "";
+        if (translatedStringInAllDevice != null) {
+            Optional<String> found = translatedStringInAllDevice.stream().filter(s -> !resourceToFind.isWrongFormat(new StringRes(resourceToFind.getName(), s))).findFirst();
+            if (found.isPresent()) str = found.get();
+        }
+        StringRes hasTranslatedInAll = TextUtils.isEmpty(str) ? null : new StringRes(resourceToFind.getName(), str);
         StringRes result;
         if (!isSpecific)
             result = hasTranslated != null ? hasTranslated : hasTranslatedInAll;
@@ -547,9 +587,11 @@ public class Application {
             if (!hasTranslatedInAll.getName().equals("app_name") && !resourceToFind.isWrongFormat(hasTranslatedInAll)) {
                 UnTranslateable unTranslateable = MainGUI.unTranslateables.get(name + "strings.xml" + hasTranslatedInAll.getName());
                 if (unTranslateable == null) {
-                    if (hasTranslatedInAll.getUntranslatedString().toLowerCase().trim().equals(resourceToFind.getValue().toLowerCase().trim())) {
+//                    if (hasTranslatedInAll.getUntranslatedString().toLowerCase().trim().equals(resourceToFind.getValue().toLowerCase().trim())) {
+                    if (!hasTranslatedInAll.getName().toLowerCase().equals("label") && !hasTranslatedInAll.getValue().toLowerCase().contains("miui.vn")
+                            && !hasTranslatedInAll.getName().contains("mtrl_picker"))
                         mapTranslatedFromOtherString.put(resourceToFind.getName(), hasTranslatedInAll);
-                    } else result = null;
+//                    } else result = null;
                 }
             }
         }

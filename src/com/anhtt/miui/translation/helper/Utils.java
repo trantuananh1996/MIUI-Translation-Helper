@@ -1,9 +1,6 @@
 package com.anhtt.miui.translation.helper;
 
-import com.anhtt.miui.translation.helper.model.WrongApplication;
-import com.anhtt.miui.translation.helper.model.WrongArrayRes;
-import com.anhtt.miui.translation.helper.model.WrongPluralRes;
-import com.anhtt.miui.translation.helper.model.WrongStringRes;
+import com.anhtt.miui.translation.helper.model.*;
 import com.anhtt.miui.translation.helper.model.res.Item;
 import com.anhtt.miui.translation.helper.model.res.StringRes;
 import org.w3c.dom.*;
@@ -300,7 +297,9 @@ public class Utils {
     }
 
     public static void writeWrongToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOriginStrings().size() == 0) return;
+        if (wrongApplication.getWrongTranslatedOriginStrings().size() == 0
+                || wrongApplication.getWrongTranslatedOriginStrings().stream().anyMatch(wrongStringRes -> !wrongStringRes.getDevices().contains("all"))
+        ) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -366,7 +365,9 @@ public class Utils {
     }
 
     public static void writeWrongArrayToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getMapWrongTranslatedOriginArrays().size() == 0) return;
+        if (wrongApplication.getMapWrongTranslatedOriginArrays().size() == 0
+                || wrongApplication.getMapWrongTranslatedOriginArrays().values().stream().anyMatch(wrongStringRes -> !wrongStringRes.getDevices().contains("all"))
+        ) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -444,7 +445,9 @@ public class Utils {
     }
 
     public static void writeWrongPluralToFile(String path, WrongApplication wrongApplication) {
-        if (wrongApplication.getWrongTranslatedOriginPlurals().size() == 0) return;
+        if (wrongApplication.getWrongTranslatedOriginPlurals().size() == 0
+                || wrongApplication.getWrongTranslatedOriginPlurals().stream().anyMatch(wrongStringRes -> !wrongStringRes.getDevices().contains("all"))
+        ) return;
         try {
             File dir = new File(path + "\\" + wrongApplication.getName());
             if (!dir.exists()) dir.mkdirs();
@@ -951,6 +954,70 @@ public class Utils {
         outputXml.close();
     }
 
+    public static void convertUntranslateablePluralFile(String path, String appName) throws ParserConfigurationException, IOException, SAXException, TransformerException {
+        DocumentBuilderFactory inFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder inDocBuilder = inFactory.newDocumentBuilder();
+        File valueFolder = new File(path + appName);
+        File file = new File(valueFolder.getAbsolutePath() + "\\plurals.xml");
+        Document inDoc = inDocBuilder.parse(file);
+        NodeList inList = inDoc.getElementsByTagName("string-array");
+
+
+        DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
+
+        DocumentBuilder documentBuilder = documentFactory.newDocumentBuilder();
+
+        Document document = documentBuilder.newDocument();
+        Element root = document.createElement("resources");
+        document.appendChild(root);
+        File oldOut = new File(path + "\\out.xml");
+        if (oldOut.exists()) {
+            Document oldOutDoc = inDocBuilder.parse(oldOut);
+            NodeList oldOutList = oldOutDoc.getElementsByTagName("item");
+            for (int i = 0; i < oldOutList.getLength(); i++) {
+                Node node = oldOutList.item(i);
+                Node firstDocImportedNode = document.importNode(node, true);
+                root.appendChild(firstDocImportedNode);
+            }
+        }
+        for (int i = 0; i < inList.getLength(); i++) {
+            Element element = (Element) inList.item(i);
+            String name = "";
+            NamedNodeMap curAttr = element.getAttributes();
+            for (int j = 0; j < curAttr.getLength(); j++) {
+                Node attr = curAttr.item(j);
+                if (attr.getNodeName().equals("name"))
+                    name = attr.getNodeValue();
+            }
+            Element item = document.createElement("item");
+            root.appendChild(item);
+            item.setAttribute("folder", "all");
+            item.setAttribute("application", appName);
+            item.setAttribute("file", "arrays.xml");
+            item.setAttribute("name", name);
+
+        }
+
+
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = transformerFactory.newTransformer();
+        DOMSource domSource = new DOMSource(document);
+        StringWriter outputXmlStringWriter = new StringWriter();
+        transformer.transform(domSource, new StreamResult(outputXmlStringWriter));
+        String outputXmlString = outputXmlStringWriter.toString()
+                .replaceAll("<item", "\n\t<item")
+                .replaceAll("<count", "\n\t<count")
+                .replaceAll("<device", "\n\t\t<device")
+                .replaceAll("<allDevice", "\n<allDevice")
+                .replaceAll("</allDevice", "\n</allDevice")
+                .replaceAll("<resources", "\n<resources")
+                .replaceAll("</resources", "\n</resources");
+
+        FileOutputStream outputXml = new FileOutputStream(path + "\\out.xml");
+        outputXml.write(outputXmlString.getBytes(StandardCharsets.UTF_8));
+        outputXml.close();
+    }
+
     public static void writeUnTranslatedFromAllStringToExistFile(String pathToWrite, String absolutePath, List<WrongApplication> untranslatedFromAllApplications) {
         for (WrongApplication wrongApplication : untranslatedFromAllApplications) {
 //            if (!isIgnoredApplication(wrongApplication.getName()))
@@ -1031,9 +1098,7 @@ public class Utils {
             DocumentBuilder inDocBuilder = inFactory.newDocumentBuilder();
             File valueFolder = new File(path + "\\" + wrongApplication.getName() + "\\res\\values-vi");
             File file = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
-
-            Document inDoc = inDocBuilder.parse(file);
-            NodeList inList = inDoc.getElementsByTagName("string");
+            if (!file.exists()) file.createNewFile();
 
 
             DocumentBuilderFactory documentFactory = DocumentBuilderFactory.newInstance();
@@ -1043,7 +1108,7 @@ public class Utils {
             Document document = documentBuilder.newDocument();
             Element root = document.createElement("resources");
             document.appendChild(root);
-            String oldContent = null;
+            String oldContent = "";
             File oldOut = new File(valueFolder.getAbsolutePath() + "\\strings.xml");
             if (oldOut.exists()) {
                 oldContent = readLineByLineJava8(oldOut.getAbsolutePath());
@@ -1077,16 +1142,24 @@ public class Utils {
 
             String out = readLineByLineJava8IgnoreFirst(path + "\\strings.xml");
             out = out.replaceAll("</string>>", "</string>");
-            if (oldContent != null) {
+            if (!TextUtils.isEmpty(oldContent.trim())) {
                 String toWrite = oldContent.replace("</resources>", "\t" + out);
                 toWrite = toWrite + "</resources>";
                 outputXml = new FileOutputStream(valueFolder.getAbsolutePath() + "\\strings.xml");
                 outputXml.write(toWrite.getBytes(StandardCharsets.UTF_8));
                 outputXml.close();
 
+            } else {
+                String toWrite = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+                toWrite = toWrite + "\n<resources>\n";
+                toWrite = toWrite + "\t" + out;
+                toWrite = toWrite + "\n</resources>";
+                outputXml = new FileOutputStream(valueFolder.getAbsolutePath() + "\\strings.xml");
+                outputXml.write(toWrite.getBytes(StandardCharsets.UTF_8));
+                outputXml.close();
             }
             new File(path + "\\strings.xml").delete();
-        } catch (ParserConfigurationException | TransformerException | IOException | SAXException pce) {
+        } catch (ParserConfigurationException | TransformerException | IOException pce) {
             pce.printStackTrace();
         }
     }
@@ -1112,7 +1185,7 @@ public class Utils {
             Document document = documentBuilder.newDocument();
             Element root = document.createElement("resources");
             document.appendChild(root);
-            String oldContent = null;
+            String oldContent = "";
             File oldOut = new File(valueFolder.getAbsolutePath() + "\\arrays.xml");
             if (oldOut.exists()) {
                 oldContent = readLineByLineJava8(oldOut.getAbsolutePath());
@@ -1156,13 +1229,21 @@ public class Utils {
 
             String out = readLineByLineJava8IgnoreFirst(path + "\\arrays.xml");
             out = out.replaceAll("</string-array>>", "</string-array>");
-            if (oldContent != null) {
+            if (!TextUtils.isEmpty(oldContent.trim())) {
                 String toWrite = oldContent.replace("</resources>", "\t" + out);
                 toWrite = toWrite + "</resources>";
                 outputXml = new FileOutputStream(valueFolder.getAbsolutePath() + "\\arrays.xml");
                 outputXml.write(toWrite.getBytes(StandardCharsets.UTF_8));
                 outputXml.close();
 
+            } else {
+                String toWrite = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+                toWrite = toWrite + "\n<resources>\n";
+                toWrite = toWrite + "\t" + out;
+                toWrite = toWrite + "\n</resources>";
+                outputXml = new FileOutputStream(valueFolder.getAbsolutePath() + "\\arrays.xml");
+                outputXml.write(toWrite.getBytes(StandardCharsets.UTF_8));
+                outputXml.close();
             }
             new File(path + "\\arrays.xml").delete();
         } catch (ParserConfigurationException | TransformerException | IOException pce) {
@@ -1191,7 +1272,7 @@ public class Utils {
             Document document = documentBuilder.newDocument();
             Element root = document.createElement("resources");
             document.appendChild(root);
-            String oldContent = null;
+            String oldContent = "";
             File oldOut = new File(valueFolder.getAbsolutePath() + "\\plurals.xml");
             if (oldOut.exists()) {
                 oldContent = readLineByLineJava8(oldOut.getAbsolutePath());
@@ -1234,14 +1315,22 @@ public class Utils {
             outputXml.close();
 
             String out = readLineByLineJava8IgnoreFirst(path + "\\plurals.xml");
-            out = out.replaceAll("</plural>>", "</plural>");
-            if (oldContent != null) {
+            out = out.replaceAll("</plurals>>", "</plurals>");
+            if (!TextUtils.isEmpty(oldContent)) {
                 String toWrite = oldContent.replace("</resources>", "\t" + out);
                 toWrite = toWrite + "</resources>";
                 outputXml = new FileOutputStream(valueFolder.getAbsolutePath() + "\\plurals.xml");
                 outputXml.write(toWrite.getBytes(StandardCharsets.UTF_8));
                 outputXml.close();
 
+            } else {
+                String toWrite = "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>";
+                toWrite = toWrite + "\n<resources>\n";
+                toWrite = toWrite + "\t" + out;
+                toWrite = toWrite + "\n</resources>";
+                outputXml = new FileOutputStream(valueFolder.getAbsolutePath() + "\\plurals.xml");
+                outputXml.write(toWrite.getBytes(StandardCharsets.UTF_8));
+                outputXml.close();
             }
             new File(path + "\\plurals.xml").delete();
         } catch (ParserConfigurationException | TransformerException | IOException pce) {

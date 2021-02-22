@@ -80,8 +80,8 @@ public class StringRes implements Resource<StringRes> {
                     || value.equals("%1$s")
                     || value.equals("%2$s")
                     || value.equals("%3$s")
-                    ||value.equals("true")
-                    ||value.equals("false")
+                    || value.equals("true")
+                    || value.equals("false")
                     || (!containsHanScript(value) && value.length() >= 15 && !value.contains(" "))
                     || value.trim().replaceAll("\n", "").replaceAll("\t", "").length() == 0
             ) return null;
@@ -123,6 +123,10 @@ public class StringRes implements Resource<StringRes> {
 
     @Override
     public boolean isWrongFormat(StringRes other) {
+        if (count(this, "%%") != count(other, "%%")) {
+            if (value.matches("[^%]% ") || other.value.matches("[^%]% ")) return true;
+            return false;
+        }
         if (value.equals("Discard") && other.value.equals("Hủy")) return true;
         if (value.equals("Hủy") && other.value.equals("Discard")) return true;
         if (isFormatted() != other.isFormatted()) return true;

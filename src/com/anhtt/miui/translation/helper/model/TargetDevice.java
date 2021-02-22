@@ -13,11 +13,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 public class TargetDevice {
+    private String path;
     private String name;
     private File translation;
     private List<Application> apps;
     //    private List<StringRes> allStrings = new ArrayList<>();
-    private Map<String, ApplicationStringRes> mapAllStrings = new HashMap<>();
+    private Map<String, List<String>> mapAllStrings = new HashMap<>();
     private Map<String, ArrayRes> mapAllArrays = new HashMap<>();
     //    private List<ArrayRes> allArrays = new ArrayList<>();
     private Map<String, PluralRes> mapAllPlurals = new HashMap<>();
@@ -38,16 +39,18 @@ public class TargetDevice {
         this.mapAllArrays = mapAllArrays;
     }
 
-    public Map<String, ApplicationStringRes> getMapAllStrings() {
+    public Map<String, List<String>> getMapAllStrings() {
         return mapAllStrings;
     }
 
-    public void setMapAllStrings(Map<String, ApplicationStringRes> mapAllStrings) {
-        this.mapAllStrings = mapAllStrings;
+    public void setPath(String path) {
+        this.path = path;
     }
 
-
-//    public List<StringRes> getAllStrings() {
+    public String getPath() {
+        return path;
+    }
+    //    public List<StringRes> getAllStrings() {
 //        return allStrings;
 //    }
 
@@ -86,7 +89,7 @@ public class TargetDevice {
 
 
     @Nullable
-    public static TargetDevice create(String path, boolean isApplyFilter, SourceDevice sourceDevicesWithoutCompare) {
+    public static TargetDevice create(String path, boolean isApplyFilter, SourceDevice... sourceDevicesWithoutCompares) {
         String deviceName = getDeviceName(path);
         if (deviceName == null || deviceName.isEmpty()) return null;
 
@@ -97,25 +100,35 @@ public class TargetDevice {
             File[] child = file.listFiles();
             if (child != null) {
                 List<Application> apps = new ArrayList<>();
+                Map<String, StringRes> mapOriginStrings = new HashMap<>();
                 for (File appFolder : child) {
                     if (appFolder.exists() && appFolder.isDirectory()) {
                         Application app = Application.create(appFolder.getAbsolutePath(), isApplyFilter);
                         if (app != null) {
                             apps.add(app);
-                            if (sourceDevicesWithoutCompare != null)
-                                for (StringRes stringRes : app.getMapOriginStrings().values()) {
-                                    Application engApp = sourceDevicesWithoutCompare.getApps().get(app.getName());
-                                    if (engApp != null) {
-                                        StringRes engString = engApp.getMapOriginStrings().get(stringRes.getName());
-                                        if (engString != null) {
-                                            ApplicationStringRes applicationStringRes = new ApplicationStringRes(stringRes.getName(), stringRes.getValue());
-                                            applicationStringRes.setUntranslatedString(engString.getValue());
+                            mapOriginStrings.putAll(app.getMapOriginStrings());
+                            for (SourceDevice sourceDevicesWithoutCompare : sourceDevicesWithoutCompares) {
+                                if (sourceDevicesWithoutCompare != null)
+                                    for (StringRes stringRes : mapOriginStrings.values()) {
+                                        Application engApp = sourceDevicesWithoutCompare.getApps().get(app.getName());
+                                        if (engApp != null) {
+                                            StringRes engString = engApp.getMapOriginStrings().get(stringRes.getName());
+                                            if (engString != null) {
+                                                ApplicationStringRes applicationStringRes = new ApplicationStringRes(stringRes.getName(), stringRes.getValue());
+                                                applicationStringRes.setUntranslatedString(engString.getValue());
 
-                                            originDevice.getMapAllStrings().putIfAbsent(stringRes.getName(), applicationStringRes);
+                                                if (originDevice.getMapAllStrings().get(engString.getValue().toLowerCase()) != null) {
+                                                    originDevice.getMapAllStrings().get(engString.getValue().toLowerCase()).add(stringRes.getValue());
+                                                } else {
+                                                    List<String> ls = new ArrayList<>();
+                                                    ls.add(stringRes.getValue());
+                                                    originDevice.getMapAllStrings().put(engString.getValue().toLowerCase(), ls);
+                                                }
+                                            }
                                         }
                                     }
+                            }
 
-                                }
                             originDevice.getMapAllArrays().putAll(app.getMapOriginArrays());
                             originDevice.getMapAllPlurals().putAll(app.getMapOriginPlurals());
                         }
@@ -128,7 +141,7 @@ public class TargetDevice {
                 originDevice.setApps(apps);
             }
 
-
+            originDevice.setPath(path);
             return originDevice;
         }
         return null;

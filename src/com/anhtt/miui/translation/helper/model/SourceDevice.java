@@ -41,34 +41,29 @@ public class SourceDevice {
 //        return true;
         List<String> strings = Arrays.asList(
 //                "begonia",
+                "apollo",
                 "cepheus",
+                "cas",
                 "cmi",
                 "crux",
                 "davinci",
-                "dipper",
-                "equuleus",
-                "chiron",
+                "gauguin",
                 "ginkgo",
                 "grus",
-                "jason",
                 "laurus",
                 "lavender",
-                "nitrogen",
-                "perseus",
+                "lime",
+                "lmi",
                 "phoenix",
                 "picasso",
-                "platina",
-                "polaris",
+                "picasso_48m",
                 "pyxis",
                 "raphael",
-                "sagit",
-                "sirius",
                 "tucana",
                 "umi",
-                "ursa",
+                "vangogh",
                 "violet",
-                "wayne",
-                "whyred");
+                "venus");
         return strings.stream()
                 .anyMatch(name::contains);
     }
@@ -93,7 +88,7 @@ public class SourceDevice {
                             if (needCompare) {
                                 swingWorker.sendLog("Processing " + deviceName + ": " + app.getName());
 
-                                Application separateApp = findSpecificedApp(targetSeparateDevices, sourceDevice, app);
+                                Application separateApp = findSpecifiedApp(targetSeparateDevices, sourceDevice, app);
                                 Application translatedApp = findTranslatedApp(transDevices, app);
                                 app.compare(sourceDevice, separateApp, translatedApp, transDevices);
                             }
@@ -139,7 +134,7 @@ public class SourceDevice {
         return null;
     }
 
-    private static Application findSpecificedApp(List<SourceDevice> specificSourceDevices, SourceDevice sourceDevice, Application app) {
+    private static Application findSpecifiedApp(List<SourceDevice> specificSourceDevices, SourceDevice sourceDevice, Application app) {
 
         //Duyệt từng sourceDevice trong ngôn ngữ gốc
         Optional<SourceDevice> specificDevice = specificSourceDevices.stream().filter(sourceDevice1 -> sourceDevice.getName().equals(sourceDevice1.getName())).findAny();
